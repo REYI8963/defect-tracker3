@@ -23,7 +23,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;}
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:var(--header-h);position:fixed;top:0;left:0;right:0;z-index:50;box-shadow:0 1px 0 var(--border);}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:var(--header-h);position:fixed;top:0;left:0;right:0;z-index:50;}
 .header-left{display:flex;align-items:center;gap:12px;}
 .app-name{font-size:17px;font-weight:700;letter-spacing:-0.5px;cursor:pointer;}
 .app-name:hover{color:var(--coral);}
@@ -77,13 +77,10 @@ body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;
 .sidebar-info{flex:1;min-width:0;}
 .sidebar-label{font-size:12px;font-weight:600;}
 .sidebar-val{font-size:18px;font-weight:800;color:var(--text);flex-shrink:0;}
-.sidebar-back{display:flex;align-items:center;gap:8px;padding:10px 14px;margin:0 8px 4px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);border:1px solid var(--border);}
-.sidebar-back:hover{background:var(--surface2);}
 .table-area{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
 .toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;}
 .search-wrap{position:relative;flex:1;min-width:160px;max-width:280px;}
 .search-wrap input{width:100%;padding:7px 12px 7px 34px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);font-size:12px;outline:none;}
-.search-wrap input:focus{border-color:var(--border2);}
 .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);}
 .toolbar select{padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;outline:none;}
 .toolbar-divider{width:1px;height:24px;background:var(--border);margin:0 2px;}
@@ -218,7 +215,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 .admin-accounts-table table{width:100%;}
 .admin-accounts-table th{background:var(--surface2);padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.4px;text-transform:uppercase;}
 .admin-accounts-table td{padding:10px 16px;border-top:1px solid var(--border);font-size:12px;}
-.admin-accounts-table tr:hover td{background:#fafaf6;}
 .role-badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
 .role-admin{background:var(--amber-bg);color:var(--amber);}
 .role-user{background:var(--blue-bg);color:var(--blue);}
@@ -277,6 +273,17 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
   <button class="batch-btn" onclick="clearSelection()" style="color:rgba(255,255,255,.6)">✕ 取消</button>
 </div>
 
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">⚠️</div><span id="confirm-title">確認</span></div></div>
+    <div class="modal-body"><p id="confirm-msg" style="font-size:13px;line-height:1.7;color:var(--text2)"></p></div>
+    <div class="modal-footer">
+      <button class="btn" id="confirm-cancel">取消</button>
+      <button class="btn btn-red" id="confirm-ok">確定</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="edit-modal">
   <div class="modal">
     <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">✏️</div>編輯追蹤資料</div><button class="modal-close" onclick="closeModal()">✕</button></div>
@@ -297,9 +304,9 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
         <div class="form-row"><label>🔖 商流回覆</label><select id="m-reply"><option value="">-- 未填寫 --</option><option>轉不良</option><option>不良退</option><option>不良換</option></select></div>
         <div class="form-row"><label>📅 反映日期</label><input type="date" id="m-date"></div>
         <div class="form-row"><label>🚚 廠商收退日</label><input type="date" id="m-returnDate"></div>
-        <div class="form-row full"><label>⚠️ 不良原因</label><input type="text" id="m-reason" placeholder="例：包裝袋破損*3、無中文標"></div>
-        <div class="form-row full"><label>📝 進度備註</label><textarea id="m-note" placeholder="例：待檔期結束後一起開退"></textarea></div>
-        <div class="form-row"><label>👤 處理人員</label><input type="text" id="m-handler" placeholder="姓名或代號"></div>
+        <div class="form-row full"><label>⚠️ 不良原因</label><input type="text" id="m-reason"></div>
+        <div class="form-row full"><label>📝 進度備註</label><textarea id="m-note"></textarea></div>
+        <div class="form-row"><label>👤 處理人員</label><input type="text" id="m-handler"></div>
       </div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="closeModal()">取消</button><button class="btn btn-dark" onclick="saveEdit()">💾 儲存</button></div>
@@ -358,7 +365,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
       </div>
       <div class="stat-card card-matched" onclick="showTable('matched')" id="card-matched">
         <div class="stat-card-icon">✅</div><div class="stat-card-val" id="st-matched">—</div>
-        <div class="stat-card-label">已帶入名稱</div><div class="stat-card-sub">成功對比商品主檔</div>
+        <div class="stat-card-label">已帶入名稱</div><div class="stat-card-sub">有供應商名稱</div>
       </div>
     </div>
   </div>
@@ -395,12 +402,12 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
           <div class="guide-box" id="guide-box" style="display:none">
             <div class="guide-title">🚀 第一次使用？請依以下步驟操作</div>
             <div class="guide-steps">
-              <div class="guide-step"><span class="guide-num">1</span><span>準備好倉庫的<strong>不良品明細 Excel 檔</strong>（需包含「明細表」分頁，欄位：項次、供應商代號、儲位、大分類、商品代號、品名、庫存數量）</span></div>
-              <div class="guide-step"><span class="guide-num">2</span><span>點擊右上角 <strong>「⬆ 匯入 Excel」</strong> 按鈕，選取 Excel 檔案</span></div>
-              <div class="guide-step"><span class="guide-num">3</span><span>資料載入後即可開始填寫<strong>商流回覆、不良原因、進度備註</strong>等追蹤資訊</span></div>
-              <div class="guide-step"><span class="guide-ok">✓</span><span>資料會<strong>自動雲端同步</strong>，下次登入無需重新匯入</span></div>
+              <div class="guide-step"><span class="guide-num">1</span><span>準備好倉庫的<strong>不良品明細 Excel 檔</strong>（欄位：項次、供應商代號、儲位、大分類、商品代號、品名、庫存數量）</span></div>
+              <div class="guide-step"><span class="guide-num">2</span><span>點擊右上角 <strong>「⬆ 匯入 Excel」</strong> 按鈕</span></div>
+              <div class="guide-step"><span class="guide-num">3</span><span>載入後即可填寫<strong>商流回覆、不良原因、進度備註</strong></span></div>
+              <div class="guide-step"><span class="guide-ok">✓</span><span>資料儲存於 <strong>Supabase 雲端</strong>，所有裝置即時同步</span></div>
             </div>
-            <button class="btn btn-dark" style="margin-top:18px;width:100%;justify-content:center;font-size:13px" onclick="document.getElementById('file-input').click()">⬆ 立即匯入 Excel</button>
+            <button class="btn btn-dark" style="margin-top:18px;width:100%;justify-content:center" onclick="document.getElementById('file-input').click()">⬆ 立即匯入 Excel</button>
           </div>
         </div>
         <div class="table-scroll">
@@ -431,18 +438,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
     </div>
   </div>
 
-  <!-- 自訂確認對話框 -->
-  <div class="modal-overlay" id="confirm-modal">
-    <div class="modal" style="max-width:400px">
-      <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">⚠️</div><span id="confirm-title">確認</span></div></div>
-      <div class="modal-body"><p id="confirm-msg" style="font-size:13px;line-height:1.7;color:var(--text2)"></p></div>
-      <div class="modal-footer">
-        <button class="btn" id="confirm-cancel">取消</button>
-        <button class="btn btn-red" id="confirm-ok">確定清空</button>
-      </div>
-    </div>
-  </div>
-
   <div id="admin-view">
     <div class="admin-banner">
       <div><h2>👑 管理員後台</h2><p>各倉廠退追蹤統計總覽</p></div>
@@ -455,7 +450,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
     <div>
       <div class="admin-section-title">👤 帳號列表</div>
       <div class="admin-accounts-table">
-        <table><thead><tr><th>帳號</th><th>倉別</th><th>角色</th><th>Storage Key</th></tr></thead>
+        <table><thead><tr><th>帳號</th><th>倉別</th><th>角色</th></tr></thead>
         <tbody id="admin-accounts-tbody"></tbody></table>
       </div>
     </div>
@@ -463,30 +458,96 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 </div>
 
 <script>
-// ── 帳號 ──
+// ══════════════════════════════════════
+// Supabase 設定
+// ══════════════════════════════════════
+const SB_URL = 'https://jspvovdhfcwarkumvkpl.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcHZvdmRoZmN3YXJrdW12a3BsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0NjU1NTIsImV4cCI6MjA5NjA0MTU1Mn0.VQq_yhvr2hbIwVx7agMeAEeILhRO_2WgYsrfZWpAHDA';
+const TABLE = 'defect_records';
+
+async function sbFetch(method, path, body) {
+  const res = await fetch(SB_URL + '/rest/v1/' + path, {
+    method: method,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// DB → 前端格式
+function dbToRecord(r) {
+  return {
+    id: r.id,
+    sn: r.sn || 0,
+    sup: r.sup || '',
+    supplierName: r.supplier_name || '',
+    loc: r.loc || '',
+    cat: r.cat || '',
+    sku: r.sku || '',
+    name: r.name || '',
+    qty: r.qty || 0,
+    reply: r.reply || '',
+    reason: r.reason || '',
+    date: r.date || '',
+    returnDate: r.return_date || '',
+    note: r.note || '',
+    handler: r.handler || '',
+    updatedAt: r.updated_at || '',
+    key: (r.sku || '') + '_' + (r.loc || ''),
+    matchScore: 0,
+    matchFields: []
+  };
+}
+
+// 前端格式 → DB
+function recordToDb(r, warehouse) {
+  return {
+    warehouse: warehouse,
+    sn: r.sn || 0,
+    sup: r.sup || '',
+    supplier_name: r.supplierName || '',
+    loc: r.loc || '',
+    cat: r.cat || '',
+    sku: r.sku || '',
+    name: r.name || '',
+    qty: r.qty || 0,
+    reply: r.reply || '',
+    reason: r.reason || '',
+    date: r.date || '',
+    return_date: r.returnDate || '',
+    note: r.note || '',
+    handler: r.handler || '',
+    updated_at: r.updatedAt || ''
+  };
+}
+
+// ══════════════════════════════════════
+// 帳號
+// ══════════════════════════════════════
 const ACCOUNTS = {
   'KAOLOG': {password:'8963',     name:'岡山倉', role:'user',  color:'#10b981', whKey:'kaolog', whLabel:'岡山倉'},
   'DADU01': {password:'1234',     name:'大肚倉', role:'user',  color:'#3b82f6', whKey:'dadu01', whLabel:'大肚倉'},
   'DAXI01': {password:'0000',     name:'大溪倉', role:'user',  color:'#8b5cf6', whKey:'daxi01', whLabel:'大溪倉'},
   'NJWU09': {password:'Aa123456', name:'管理員', role:'admin', color:'#f59e0b', whKey:null,     whLabel:null},
 };
-function whKey(k){ return 'defect_tracker_wh_'+k; }
 
-// ── 預設資料 ──
-const KAOLOG_INIT = [{"sn":1,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-057","cat":"預購","sku":"50065379","name":"25gx1_預-造型擦手巾","qty":2,"reply":"轉不良","reason":"無中文標","date":"2026-04-08","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50065379_JA01-057","matchScore":0,"matchFields":[]},{"sn":2,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD04-011","cat":"預購","sku":"50065400","name":"1個x1_贈-Bobo捏捏球","qty":10,"reply":"","reason":"","date":"","returnDate":"","note":"待檔期結束後一起開退","handler":"","updatedAt":"","key":"50065400_JD04-011","matchScore":0,"matchFields":[]},{"sn":3,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD04-011","cat":"預購","sku":"50065401","name":"1個x1_贈-Dinataeng捏捏球","qty":23,"reply":"","reason":"","date":"","returnDate":"","note":"待檔期結束後一起開退","handler":"","updatedAt":"2026-06-02","key":"50065401_JD04-011","matchScore":0,"matchFields":[]},{"sn":4,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-057","cat":"預購","sku":"50068074","name":"1個x1_樂淇蘋果帆布袋","qty":5,"reply":"轉不良","reason":"汙點*4+破損*1","date":"2026-05-14","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068074_JA01-057","matchScore":0,"matchFields":[]},{"sn":5,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-056","cat":"預購","sku":"50068224","name":"1個x1_贈-午后時光重乳奶茶造型","qty":1,"reply":"轉不良","reason":"無中文標","date":"2026-05-20","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068224_JA01-056","matchScore":0,"matchFields":[]},{"sn":6,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-054","cat":"預購","sku":"50068379","name":"1個x1_微醉易開罐造型吊飾","qty":3,"reply":"轉不良","reason":"包裝袋破損*3","date":"2026-05-27","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-05-28","key":"50068379_JA01-054","matchScore":0,"matchFields":[]},{"sn":7,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-054","cat":"預購","sku":"50068380","name":"1個x1_196易開罐造型吊飾","qty":7,"reply":"轉不良","reason":"包裝袋破損*7","date":"2026-05-27","returnDate":"","note":"帶檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-05-28","key":"50068380_JA01-054","matchScore":0,"matchFields":[]},{"sn":8,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD03-011","cat":"預購","sku":"50068382","name":"1個x1_預SUPERDRY多功能收納盒","qty":15,"reply":"轉不良","reason":"凹損*13+破損*2","date":"2026-05-22","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068382_JD03-011","matchScore":0,"matchFields":[]},{"sn":9,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD03-011","cat":"預購","sku":"50068383","name":"1個x1_預)銀色保冰提袋","qty":11,"reply":"轉不良","reason":"汙損*11","date":"2026-05-22","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068383_JD03-011","matchScore":0,"matchFields":[]},{"sn":10,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD02-011","cat":"預購","sku":"50068385","name":"1個x1_預)冰結手提冰壩杯","qty":6,"reply":"轉不良","reason":"包裝盒破損*6","date":"2026-05-22","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068385_JD02-011","matchScore":0,"matchFields":[]},{"sn":11,"sup":"002054","supplierName":"東輝生物科技有限公司","loc":"JA01-055","cat":"居家/美妝","sku":"50066135","name":"1個x1_團-8骨透明直傘-小白款","qty":1,"reply":"不良退","reason":"包裝袋破損","date":"2026-05-08","returnDate":"","note":"待預購開退時一併聯絡廠商","handler":"吳念臻","updatedAt":"2026-06-02","key":"50066135_JA01-055","matchScore":0,"matchFields":[]},{"sn":12,"sup":"025085","supplierName":"富商國際股份有限公司","loc":"JA01-055","cat":"居家/美妝","sku":"50066809","name":"1支_團-冰川藍-超速乾秒收輕羽傘","qty":1,"reply":"不良退","reason":"無條碼標*1","date":"2026-05-07","returnDate":"","note":"6/2已發信待回覆","handler":"吳念臻","updatedAt":"2026-06-02","key":"50066809_JA01-055","matchScore":0,"matchFields":[]},{"sn":13,"sup":"114923","supplierName":"龍運行銷股份有限公司","loc":"JA01-022","cat":"食品","sku":"50046297","name":"520mlx_C2O100%純椰子水","qty":1,"reply":"不良退","reason":"凹損*1","date":"2026-05-22","returnDate":"","note":"6/2已發信待回覆","handler":"吳念臻","updatedAt":"2026-06-02","key":"50046297_JA01-022","matchScore":0,"matchFields":[]},{"sn":14,"sup":"122078","supplierName":"拌伴餐飲有限公司","loc":"JA01-023","cat":"食品","sku":"20209227","name":"190公克±_團-卡哩卡哩-甜味","qty":1,"reply":"不良退","reason":"無效期標示*1","date":"2026-05-26","returnDate":"","note":"6/2已發信待回覆","handler":"吳念臻","updatedAt":"2026-06-02","key":"20209227_JA01-023","matchScore":0,"matchFields":[]},{"sn":15,"sup":"639880","supplierName":"","loc":"RB04","cat":"居家/美妝","sku":"50068213","name":"1包x1_團-肌淨亮白卸妝棉48片","qty":2,"reply":"不良換","reason":"汙損*2","date":"2026-05-29","returnDate":"","note":"","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068213_RB04","matchScore":0,"matchFields":[]},{"sn":16,"sup":"642282","supplierName":"天然家園國際股份有限公司","loc":"KK01","cat":"食品","sku":"50003369","name":"420gx1_團-東泉辣椒醬","qty":1,"reply":"不良退","reason":"破損*1","date":"","returnDate":"","note":"廠商回覆暫不收退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50003369_KK01","matchScore":0,"matchFields":[]},{"sn":17,"sup":"871561","supplierName":"全台物流股份有限公司","loc":"KK05","cat":"國際線/其它","sku":"50041514","name":"405gx1_團-Dare海鹽蔬菜脆片","qty":1,"reply":"不良退","reason":"","date":"2026-05-22","returnDate":"2026-06-03","note":"全台6/3進貨時一併收退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50041514_KK05","matchScore":0,"matchFields":[]},{"sn":18,"sup":"871561","supplierName":"全台物流股份有限公司","loc":"KK05","cat":"國際線/其它","sku":"50058725","name":"110gx1_團-維力香菜牛肉風味麵","qty":1,"reply":"不良退","reason":"","date":"2026-05-22","returnDate":"2026-06-03","note":"全台6/3進貨時一併收退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50058725_KK05","matchScore":0,"matchFields":[]},{"sn":19,"sup":"871561","supplierName":"全台物流股份有限公司","loc":"KK05","cat":"國際線/其它","sku":"50065874","name":"700g(2_團-超大奇多隨口脆玉米脆","qty":1,"reply":"不良退","reason":"","date":"2026-05-22","returnDate":"2026-06-03","note":"全台6/3進貨時一併收退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50065874_KK05","matchScore":0,"matchFields":[]},{"sn":20,"sup":"257363","supplierName":"富士鮮味股份有限公司","loc":"JC01-011","cat":"預購","sku":"50027687","name":"700ml*_預-富士山麓威士忌中秋禮盒","qty":-28,"reply":"","reason":"","date":"","returnDate":"","note":"開退異常","handler":"","updatedAt":"2026-06-02","key":"50027687_JC01-011","matchScore":0,"matchFields":[]}];
-
-const DADU_INIT = [{"sn":1,"sup":"001001","supplierName":"大肚測試供應商A","loc":"DA01-001","cat":"食品","sku":"60001001","name":"【測試】大肚倉_罐裝飲料","qty":5,"reply":"不良退","reason":"凹損*5","date":"2026-05-20","returnDate":"","note":"⚠️ 測試資料，請清空後匯入正式Excel","handler":"測試員","updatedAt":"2026-06-03","key":"60001001_DA01-001","matchScore":0,"matchFields":[]},{"sn":2,"sup":"001002","supplierName":"大肚測試供應商B","loc":"DA02-003","cat":"居家/美妝","sku":"60001002","name":"【測試】大肚倉_洗髮精","qty":3,"reply":"","reason":"","date":"","returnDate":"","note":"⚠️ 測試資料，請清空後匯入正式Excel","handler":"","updatedAt":"","key":"60001002_DA02-003","matchScore":0,"matchFields":[]}];
-
-const DAXI_INIT = [{"sn":1,"sup":"002001","supplierName":"大溪測試供應商A","loc":"DX01-001","cat":"預購","sku":"70001001","name":"【測試】大溪倉_預購商品","qty":8,"reply":"轉不良","reason":"包裝破損*8","date":"2026-05-25","returnDate":"","note":"⚠️ 測試資料，請清空後匯入正式Excel","handler":"測試員","updatedAt":"2026-06-03","key":"70001001_DX01-001","matchScore":0,"matchFields":[]},{"sn":2,"sup":"002002","supplierName":"大溪測試供應商B","loc":"DX02-005","cat":"食品","sku":"70001002","name":"【測試】大溪倉_零食","qty":2,"reply":"不良換","reason":"汙損*2","date":"2026-05-10","returnDate":"","note":"⚠️ 測試資料，請清空後匯入正式Excel","handler":"測試員","updatedAt":"2026-06-03","key":"70001002_DX02-005","matchScore":0,"matchFields":[]}];
-
-// ── State ──
 let records=[], editIdx=null, currentUser=null, notifShown=false;
 let selectedIdx=new Set();
 
 // ── Helpers ──
 function showLoading(msg){document.getElementById('loading-text').textContent=msg||'處理中...';document.getElementById('loading-overlay').classList.add('show');}
 function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
-function showToast(msg,ms){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms||2500);}
+function showToast(msg,ms){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},ms||2500);}
 function setSyncStatus(type,msg){const el=document.getElementById('sync-status');el.className='sync-pill sync-'+type;el.textContent=msg;}
 function formatDate(val){if(!val)return '';const s=String(val).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const d=new Date(s);if(isNaN(d))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -494,16 +555,15 @@ function daysSince(ds){if(!ds)return null;const d=new Date(ds);if(isNaN(d))retur
 function daysUntil(ds){if(!ds)return null;const d=new Date(ds);if(isNaN(d))return null;return Math.ceil((d-new Date())/86400000);}
 function overdueLevel(r){const d=daysSince(r.date);if(d===null)return 0;if(d>14)return 2;if(d>7)return 1;return 0;}
 function isOverdue(r){return overdueLevel(r)>0;}
-function normalizeRecord(r){return {...r,qty:isNaN(Number(r.qty))?0:Number(r.qty),sn:isNaN(Number(r.sn))?0:Number(r.sn),matchScore:isNaN(Number(r.matchScore))?0:Number(r.matchScore),matchFields:Array.isArray(r.matchFields)?r.matchFields:[],date:formatDate(r.date),updatedAt:formatDate(r.updatedAt),returnDate:formatDate(r.returnDate),handler:String(r.handler||''),key:String(r.sku||'').trim()+'_'+String(r.loc||'').trim()};}
 
-// ── 登入 / 登出 ──
+// ── 登入 ──
 function doLogin(){
   const uid=document.getElementById('login-user').value.trim().toUpperCase();
   const pw=document.getElementById('login-pass').value;
   const errEl=document.getElementById('login-error');
   if(!uid||!pw){errEl.textContent='請輸入帳號與密碼';return;}
   const acc=ACCOUNTS[uid];
-  if(!acc||acc.password!==pw){errEl.textContent='帳號或密碼錯誤，請重新輸入';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();return;}
+  if(!acc||acc.password!==pw){errEl.textContent='帳號或密碼錯誤';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();return;}
   currentUser={id:uid,...acc};
   errEl.textContent='';
   document.getElementById('login-screen').classList.add('hidden');
@@ -512,16 +572,15 @@ function doLogin(){
   document.getElementById('user-display').textContent=acc.name;
   if(acc.whLabel){
     const wb=document.getElementById('wh-badge');
-    wb.textContent=acc.whLabel; wb.style.display='';
-    wb.style.background=acc.color+'22'; wb.style.color=acc.color;
+    wb.textContent=acc.whLabel;wb.style.display='';
+    wb.style.background=acc.color+'22';wb.style.color=acc.color;
   }
   if(acc.role==='admin'){showAdminView();}
   else{document.getElementById('header-actions').style.display='flex';loadData();}
 }
 
 function doLogout(){
-  if(!confirm('確定要登出嗎？'))return;
-  currentUser=null; records=[];
+  currentUser=null;records=[];
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('user-badge').style.display='none';
   document.getElementById('wh-badge').style.display='none';
@@ -529,8 +588,7 @@ function doLogout(){
   document.getElementById('login-user').value='';
   document.getElementById('login-pass').value='';
   document.getElementById('login-error').textContent='';
-  hideAllViews();
-  setSyncStatus('loading','⏳ 連線中...');
+  hideAllViews();setSyncStatus('loading','⏳ 連線中...');
 }
 
 // ── 視圖 ──
@@ -563,93 +621,104 @@ function showTableIfHasData(){
   }
 }
 
-// ── 資料 ──
+// ── 讀取資料（Supabase）──
 async function loadData(){
   if(!currentUser||currentUser.role==='admin')return;
   setSyncStatus('loading','⏳ 讀取中...');
   document.getElementById('btn-refresh').disabled=true;
   showLoading('讀取資料中...');
   try{
-    const result=await window.storage.get(whKey(currentUser.whKey),true);
-    if(result&&result.value){
-      const saved=JSON.parse(result.value);
-      if(saved&&saved.length>0){
-        records=saved.map(normalizeRecord);
-        showToast('✓ 已載入 '+records.length+' 筆');
-        setTimeout(showReturnDateNotif,800);
-      } else {
-        await loadInitForWarehouse();
-      }
-    } else {
-      await loadInitForWarehouse();
-    }
-    renderTable(); updateStats(); setSyncStatus('ok','✓ 已連線');
-    if(records.length===0) showEmptyGuide(); else showDashboard();
-  } catch(e) {
-    await loadInitForWarehouse();
-    renderTable(); updateStats(); setSyncStatus('ok','✓ 本機模式');
-    if(records.length===0) showEmptyGuide(); else showDashboard();
+    const data = await sbFetch('GET', TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=1000', null);
+    records = (data||[]).map(dbToRecord);
+    setSyncStatus('ok','✓ 已連線');
+    showToast('✓ 已載入 '+records.length+' 筆');
+    renderTable();updateStats();
+    if(records.length===0)showEmptyGuide();else showDashboard();
+    if(records.length>0)setTimeout(showReturnDateNotif,800);
+  }catch(e){
+    setSyncStatus('err','✗ 連線失敗');
+    showToast('⚠ 無法連線 Supabase：'+e.message,5000);
+    records=[];
+    showEmptyGuide();
   }
   hideLoading();
   document.getElementById('btn-refresh').disabled=false;
 }
 
-async function loadInitForWarehouse(){
-  if(currentUser.whKey==='kaolog') records=JSON.parse(JSON.stringify(KAOLOG_INIT));
-  else if(currentUser.whKey==='dadu01') records=JSON.parse(JSON.stringify(DADU_INIT));
-  else if(currentUser.whKey==='daxi01') records=JSON.parse(JSON.stringify(DAXI_INIT));
-  else records=[];
-  try{ await window.storage.set(whKey(currentUser.whKey),JSON.stringify(records),true); }catch(e){}
-  showTableIfHasData();
-  if(records.length>0){showToast('✓ 已載入預設資料 '+records.length+' 筆');setTimeout(showReturnDateNotif,800);}
-}
-
-async function saveData(){
-  if(!currentUser||currentUser.role==='admin')return;
-  setSyncStatus('loading','⏳ 儲存中...');
-  try{
-    await window.storage.set(whKey(currentUser.whKey),JSON.stringify(records),true);
-    setSyncStatus('ok','✓ 已同步');
-    showToast('✓ 已儲存');
-  } catch(err) {
-    setSyncStatus('err','✗ 儲存失敗');
-    showToast('⚠ 儲存失敗：'+err.message,5000);
+// ── 儲存單筆（upsert by id）──
+async function saveRecord(r){
+  const body = recordToDb(r, currentUser.whKey);
+  if(r.id){
+    await sbFetch('PATCH', TABLE+'?id=eq.'+r.id, body);
+  } else {
+    const res = await sbFetch('POST', TABLE, body);
+    if(res&&res[0])r.id=res[0].id;
   }
 }
 
+// ── 批次寫入（匯入 Excel 後全部 upsert）──
+async function saveAllRecords(){
+  setSyncStatus('loading','⏳ 同步中...');
+  try{
+    // 先刪除該倉舊資料
+    await sbFetch('DELETE', TABLE+'?warehouse=eq.'+currentUser.whKey, null);
+    // 重新寫入
+    const bodies = records.map(function(r){return recordToDb(r,currentUser.whKey);});
+    // 分批 100 筆
+    for(let i=0;i<bodies.length;i+=100){
+      await sbFetch('POST', TABLE, bodies.slice(i,i+100));
+    }
+    // 重新讀取取得 id
+    const data = await sbFetch('GET', TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=1000', null);
+    records = (data||[]).map(dbToRecord);
+    setSyncStatus('ok','✓ 已同步');
+    showToast('✓ 已同步 '+records.length+' 筆至 Supabase');
+  }catch(e){
+    setSyncStatus('err','✗ 同步失敗');
+    showToast('⚠ 同步失敗：'+e.message,5000);
+  }
+}
+
+// ── 清空資料 ──
 function clearAllData(){
+  if(!currentUser||!currentUser.whLabel)return;
   const modal=document.getElementById('confirm-modal');
-  document.getElementById('confirm-title').textContent='清空「'+currentUser.whLabel+'」資料';
-  document.getElementById('confirm-msg').textContent='確定要清空此倉所有資料嗎？此動作無法復原，建議先匯出備份。';
-  document.getElementById('confirm-cancel').onclick=function(){modal.classList.remove('open');};
-  document.getElementById('confirm-ok').textContent='確定清空';
-  document.getElementById('confirm-ok').onclick=function(){
-    modal.classList.remove('open');
-    // 二次確認
-    document.getElementById('confirm-title').textContent='⚠️ 再次確認';
-    document.getElementById('confirm-msg').textContent='資料清空後將完全消失，確定繼續？';
-    document.getElementById('confirm-ok').textContent='是的，清空！';
-    document.getElementById('confirm-ok').onclick=async function(){
+  const titleEl=document.getElementById('confirm-title');
+  const msgEl=document.getElementById('confirm-msg');
+  const cancelBtn=document.getElementById('confirm-cancel');
+  const okBtn=document.getElementById('confirm-ok');
+  // 第一次確認
+  titleEl.textContent='清空「'+currentUser.whLabel+'」資料';
+  msgEl.textContent='確定要清空此倉所有資料嗎？此動作無法復原，建議先匯出備份。';
+  okBtn.textContent='確定清空';
+  cancelBtn.onclick=function(){modal.classList.remove('open');};
+  okBtn.onclick=function(){
+    // 第二次確認
+    titleEl.textContent='⚠️ 再次確認';
+    msgEl.textContent='資料清空後將完全消失，確定繼續？';
+    okBtn.textContent='是的，清空！';
+    okBtn.onclick=async function(){
       modal.classList.remove('open');
-      records=[];
+      showLoading('清空中...');
       try{
-        await window.storage.set(whKey(currentUser.whKey),JSON.stringify([]),true);
-        showToast('✓ 已清空所有資料');
-        renderTable(); updateStats();
+        await sbFetch('DELETE',TABLE+'?warehouse=eq.'+currentUser.whKey,null);
+        records=[];
+        renderTable();updateStats();
         showEmptyGuide();
         setSyncStatus('ok','✓ 已同步');
+        showToast('✓ 已清空所有資料');
       }catch(e){
         showToast('⚠ 清空失敗：'+e.message,4000);
       }
+      hideLoading();
     };
-    modal.classList.add('open');
   };
   modal.classList.add('open');
 }
 
 // ── 匯入 Excel ──
 function handleFile(input){
-  const file=input.files[0]; if(!file)return;
+  const file=input.files[0];if(!file)return;
   showLoading('讀取 Excel 中...');
   const reader=new FileReader();
   reader.onload=async function(e){
@@ -666,23 +735,26 @@ function handleFile(input){
       for(let i=1;i<raw.length;i++){
         const row=raw[i];
         const sku=String(row[ci.sku]||'').trim(),loc=String(row[ci.loc]||'').trim();
-        const k=sku+'_'+loc; if(!k||k==='_')continue;
-        newMap[k]={sn:row[ci.sn]||i,sup:String(row[ci.sup]||'').trim(),loc:loc,cat:String(row[ci.cat]||'').trim(),sku:sku,name:String(row[ci.name]||'').trim(),qty:row[ci.qty]!==''?Number(row[ci.qty]):0,reply:'',reason:'',date:'',returnDate:'',note:'',handler:'',updatedAt:'',supplierName:'',matchScore:0,matchFields:[]};
+        const k=sku+'_'+loc;if(!k||k==='_')continue;
+        newMap[k]={sn:Number(row[ci.sn])||i,sup:String(row[ci.sup]||'').trim(),loc:loc,cat:String(row[ci.cat]||'').trim(),sku:sku,name:String(row[ci.name]||'').trim(),qty:row[ci.qty]!==''?Number(row[ci.qty]):0,reply:'',reason:'',date:'',returnDate:'',note:'',handler:'',updatedAt:'',supplierName:'',matchScore:0,matchFields:[]};
       }
+      // 合併舊資料
       const existMap={};
-      records.forEach(function(r){const k=String(r.sku||'').trim()+'_'+String(r.loc||'').trim();if(k&&k!=='_')existMap[k]=r;});
+      records.forEach(function(r){const k=r.sku+'_'+r.loc;if(k)existMap[k]=r;});
       const merged=[];
-      Object.entries(newMap).forEach(function(entry){const k=entry[0],nd=entry[1];if(existMap[k]){const old=existMap[k];merged.push(Object.assign({},old,{qty:nd.qty,sn:nd.sn,name:nd.name}));}else{merged.push(nd);}});
-      const deduped={};
-      merged.forEach(function(r){const k=String(r.sku||'').trim()+'_'+String(r.loc||'').trim();if(!deduped[k])deduped[k]=r;});
-      records=Object.values(deduped).sort(function(a,b){return Number(a.sn)-Number(b.sn);});
-      showTableIfHasData();
-      renderTable(); updateStats();
-      notifShown=false; setTimeout(showReturnDateNotif,600);
-      if(records.length>0) showDashboard();
-      hideLoading(); await saveData();
-    } catch(err) {hideLoading();alert('讀取失敗：'+err.message);}
-    input.value='';
+      Object.entries(newMap).forEach(function(entry){
+        const k=entry[0],nd=entry[1];
+        if(existMap[k]){merged.push(Object.assign({},existMap[k],{qty:nd.qty,sn:nd.sn,name:nd.name}));}
+        else{merged.push(nd);}
+      });
+      records=merged.sort(function(a,b){return a.sn-b.sn;});
+      showTableIfHasData();renderTable();updateStats();
+      notifShown=false;
+      if(records.length>0){showDashboard();setTimeout(showReturnDateNotif,600);}
+      await saveAllRecords();
+      renderTable();updateStats();
+    }catch(err){alert('讀取失敗：'+err.message);}
+    hideLoading();input.value='';
   };
   reader.readAsArrayBuffer(file);
 }
@@ -739,10 +811,10 @@ function renderTable(){
       '<td class="cell-clip" style="max-width:200px" title="'+r.name+'">'+r.name+'</td>'+
       '<td style="text-align:right;font-weight:600;'+(r.qty<0?'color:var(--coral)':'')+'">'+r.qty+'</td>'+
       '<td>'+replyBadge(r.reply)+'</td>'+
-      '<td class="cell-clip" style="max-width:110px;color:var(--text2)" title="'+(r.reason||'')+'">'+(r.reason||'—')+'</td>'+
+      '<td class="cell-clip" style="max-width:110px;color:var(--text2)">'+(r.reason||'—')+'</td>'+
       '<td style="white-space:nowrap;font-size:12px">'+dateHtml+'</td>'+
       '<td style="white-space:nowrap;font-size:12px">'+retHtml+'</td>'+
-      '<td class="cell-clip" style="max-width:130px;color:var(--text2)" title="'+(r.note||'')+'">'+(r.note||'—')+'</td>'+
+      '<td class="cell-clip" style="max-width:130px;color:var(--text2)">'+(r.note||'—')+'</td>'+
       '<td style="font-size:12px">'+(r.handler||'—')+'</td>'+
       '<td style="font-size:11px;color:var(--text3)">'+(r.updatedAt||'—')+'</td>'+
       '<td style="position:sticky;right:0;background:var(--surface);box-shadow:-2px 0 4px rgba(0,0,0,.06)"><button class="btn btn-sm" onclick="openEdit('+ri+')">編輯</button></td>'+
@@ -760,21 +832,20 @@ function updateStats(){
   document.getElementById('st-ret').textContent=ret;
   document.getElementById('st-swap').textContent=sw;
   document.getElementById('st-matched').textContent=mt;
-  var sMap={all:tot,pending:pend,overdue:ov,trans:tr,ret:ret,swap:sw,matched:mt};
-  Object.keys(sMap).forEach(function(k){var el=document.getElementById('sb-val-'+k);if(el)el.textContent=sMap[k];});
+  var sm={all:tot,pending:pend,overdue:ov,trans:tr,ret:ret,swap:sw,matched:mt};
+  Object.keys(sm).forEach(function(k){var el=document.getElementById('sb-val-'+k);if(el)el.textContent=sm[k];});
   updateSupFilter();
 }
 
 function updateSupFilter(){
-  const sel=document.getElementById('filter-sup'); if(!sel)return;
+  const sel=document.getElementById('filter-sup');if(!sel)return;
   const cur=sel.value,m={};
   records.forEach(function(r){if(r.sup)m[r.sup]=r.supplierName||r.sup;});
   sel.innerHTML='<option value="">🏢 全部供應商</option>';
   Object.entries(m).sort(function(a,b){return a[0].localeCompare(b[0]);}).forEach(function(entry){
-    const code=entry[0],name=entry[1];
     const o=document.createElement('option');
-    o.value=code; o.textContent=name!==code?code+' '+name:code;
-    if(code===cur)o.selected=true;
+    o.value=entry[0];o.textContent=entry[1]!==entry[0]?entry[0]+' '+entry[1]:entry[0];
+    if(entry[0]===cur)o.selected=true;
     sel.appendChild(o);
   });
 }
@@ -785,7 +856,7 @@ function showReturnDateNotif(){
   if(!items.length){showOverdueNotif();return;}
   document.getElementById('notif-title').textContent='🚚 廠商收退提醒';
   let html='<div style="font-size:11px;font-weight:700;color:#5b21b6;margin-bottom:12px">以下品項廠商即將收退，請盡速處理！</div>';
-  items.forEach(function(r){const d=daysUntil(r.returnDate);const label=d===0?'📦 今日收退':'D-'+d;const cls=d===0?'return-date-today':'return-date-soon';html+='<div class="notif-item" style="background:'+(d===0?'#fef3c7':'#f5f3ff')+';border-color:'+(d===0?'#fde68a':'#c4b5fd')+'"><div style="font-size:22px">🚚</div><div class="notif-item-info"><div class="notif-item-name">'+r.name+'</div><div class="notif-item-meta">供應商：'+r.sup+'　儲位：'+r.loc+'　收退日：<strong>'+r.returnDate+'</strong></div></div><span class="'+cls+'">'+label+'</span></div>';});
+  items.forEach(function(r){const d=daysUntil(r.returnDate);const label=d===0?'📦 今日收退':'D-'+d;const cls=d===0?'return-date-today':'return-date-soon';html+='<div class="notif-item" style="background:'+(d===0?'#fef3c7':'#f5f3ff')+';border-color:'+(d===0?'#fde68a':'#c4b5fd')+'"><div style="font-size:22px">🚚</div><div class="notif-item-info"><div class="notif-item-name">'+r.name+'</div><div class="notif-item-meta">供應商：'+r.sup+'　收退日：<strong>'+r.returnDate+'</strong></div></div><span class="'+cls+'">'+label+'</span></div>';});
   document.getElementById('notif-body').innerHTML=html;
   document.getElementById('notif-close-btn').onclick=function(){closeNotif();setTimeout(showOverdueNotif,300);};
   document.getElementById('notif-overlay').classList.add('open');
@@ -798,8 +869,8 @@ function showOverdueNotif(){
   document.getElementById('notif-title').textContent='🚨 逾期品項通知';
   const crit=items.filter(function(r){return overdueLevel(r)===2;}),warn=items.filter(function(r){return overdueLevel(r)===1;});
   let html='';
-  if(crit.length){html+='<div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px">🔴 嚴重逾期（超過14天）— '+crit.length+' 筆</div>';crit.forEach(function(r){const d=daysSince(r.date);html+='<div class="notif-item crit"><div style="font-size:20px">🚨</div><div class="notif-item-info"><div class="notif-item-name">'+r.name+'</div><div class="notif-item-meta">供應商：'+r.sup+'　逾期 '+d+' 天</div></div><span class="overdue-crit-pill">逾'+d+'天</span></div>';});}
-  if(warn.length){if(crit.length)html+='<div style="height:12px"></div>';html+='<div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:8px">🟡 逾期警示（7–14天）— '+warn.length+' 筆</div>';warn.forEach(function(r){const d=daysSince(r.date);html+='<div class="notif-item warn"><div style="font-size:20px">⚠️</div><div class="notif-item-info"><div class="notif-item-name">'+r.name+'</div><div class="notif-item-meta">供應商：'+r.sup+'　逾期 '+d+' 天</div></div><span class="overdue-warn-pill">逾'+d+'天</span></div>';});}
+  if(crit.length){html+='<div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px">🔴 嚴重逾期（超過14天）— '+crit.length+' 筆</div>';crit.forEach(function(r){const d=daysSince(r.date);html+='<div class="notif-item crit"><div style="font-size:20px">🚨</div><div class="notif-item-info"><div class="notif-item-name">'+r.name+'</div><div class="notif-item-meta">'+r.sup+'　逾期 '+d+' 天</div></div><span class="overdue-crit-pill">逾'+d+'天</span></div>';});}
+  if(warn.length){if(crit.length)html+='<div style="height:12px"></div>';html+='<div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:8px">🟡 逾期警示（7–14天）— '+warn.length+' 筆</div>';warn.forEach(function(r){const d=daysSince(r.date);html+='<div class="notif-item warn"><div style="font-size:20px">⚠️</div><div class="notif-item-info"><div class="notif-item-name">'+r.name+'</div><div class="notif-item-meta">'+r.sup+'　逾期 '+d+' 天</div></div><span class="overdue-warn-pill">逾'+d+'天</span></div>';});}
   document.getElementById('notif-body').innerHTML=html;
   document.getElementById('notif-close-btn').onclick=function(){closeNotif();};
   document.getElementById('notif-overlay').classList.add('open');
@@ -810,21 +881,18 @@ function closeNotif(){document.getElementById('notif-overlay').classList.remove(
 function showTable(key){
   hideAllViews();
   document.getElementById('table-view').style.display='flex';
-  const sb=document.getElementById('sidebar');
-  sb.style.display='flex';
+  const sb=document.getElementById('sidebar');sb.style.display='flex';
   if(!sb.classList.contains('collapsed'))sb.classList.add('collapsed');
-  // 確保表格/空白狀態正確顯示
-  showTableIfHasData();
-  filterByCard(key);
+  showTableIfHasData();filterByCard(key);
 }
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed');}
 function filterByCard(key){
   document.querySelectorAll('.sidebar-item').forEach(function(el){el.classList.remove('active');});
-  const sEl=document.getElementById('sidebar-'+key); if(sEl)sEl.classList.add('active');
+  const sEl=document.getElementById('sidebar-'+key);if(sEl)sEl.classList.add('active');
   document.querySelectorAll('.stat-card').forEach(function(el){el.classList.remove('active');});
-  const cEl=document.getElementById('card-'+key); if(cEl)cEl.classList.add('active');
+  const cEl=document.getElementById('card-'+key);if(cEl)cEl.classList.add('active');
   const replyEl=document.getElementById('filter-reply'),ovEl=document.getElementById('filter-overdue');
-  replyEl.value=''; ovEl.value='';
+  replyEl.value='';ovEl.value='';
   if(key==='pending')replyEl.value='__empty';
   else if(key==='overdue')ovEl.value='1';
   else if(key==='trans')replyEl.value='轉不良';
@@ -842,8 +910,17 @@ function openBatchModal(){if(!selectedIdx.size)return;document.getElementById('b
 function closeBatchModal(){document.getElementById('batch-modal-overlay').classList.remove('open');}
 async function applyBatch(){
   const reply=document.getElementById('b-reply').value,date=document.getElementById('b-date').value,returnDate=document.getElementById('b-returnDate').value,reason=document.getElementById('b-reason').value,note=document.getElementById('b-note').value,handler=document.getElementById('b-handler').value,cnt=selectedIdx.size;
-  selectedIdx.forEach(function(idx){var r=records[idx];if(reply)r.reply=reply;if(date)r.date=date;if(returnDate)r.returnDate=returnDate;if(reason)r.reason=reason;if(note)r.note=note;if(handler)r.handler=handler;r.updatedAt=todayStr();});
-  closeBatchModal();clearSelection();renderTable();updateStats();await saveData();showToast('✓ 已批次更新 '+cnt+' 筆');
+  const promises=[];
+  selectedIdx.forEach(function(idx){
+    const r=records[idx];
+    if(reply)r.reply=reply;if(date)r.date=date;if(returnDate)r.returnDate=returnDate;
+    if(reason)r.reason=reason;if(note)r.note=note;if(handler)r.handler=handler;
+    r.updatedAt=todayStr();
+    promises.push(saveRecord(r));
+  });
+  await Promise.all(promises);
+  closeBatchModal();clearSelection();renderTable();updateStats();
+  showToast('✓ 已批次更新 '+cnt+' 筆');setSyncStatus('ok','✓ 已同步');
 }
 
 // ── 單筆編輯 ──
@@ -874,7 +951,9 @@ async function saveEdit(){
   r.handler=document.getElementById('m-handler').value;
   r.supplierName=document.getElementById('m-supplierName').value||r.supplierName||'';
   r.updatedAt=todayStr();
-  closeModal();renderTable();updateStats();await saveData();
+  closeModal();renderTable();updateStats();
+  try{await saveRecord(r);setSyncStatus('ok','✓ 已同步');showToast('✓ 已儲存');}
+  catch(e){setSyncStatus('err','✗ 同步失敗');showToast('⚠ 儲存失敗：'+e.message,4000);}
 }
 document.getElementById('edit-modal').addEventListener('click',function(e){if(e.target===document.getElementById('edit-modal'))closeModal();});
 function handleRowClick(event,idx){if(event.target.type==='checkbox'||event.target.tagName==='BUTTON'||event.target.closest('button'))return;openEdit(idx);}
@@ -896,37 +975,29 @@ function exportData(){
   showToast('✓ 已匯出 '+records.length+' 筆');
 }
 
-// ── 管理員後台 ──
+// ── 管理員 ──
 function showAdminView(){
   hideAllViews();
   document.getElementById('admin-view').style.display='flex';
-  loadAdminStats();
-  renderAdminAccounts();
+  loadAdminStats();renderAdminAccounts();
 }
 
 async function loadAdminStats(){
   const grid=document.getElementById('admin-wh-grid');
   grid.innerHTML='<div style="color:var(--text3);font-size:12px;padding:16px">載入中...</div>';
   const warehouses=[
-    {key:'kaolog',label:'岡山倉',color:'#10b981',init:KAOLOG_INIT},
-    {key:'dadu01',label:'大肚倉',color:'#3b82f6',init:DADU_INIT},
-    {key:'daxi01',label:'大溪倉',color:'#8b5cf6',init:DAXI_INIT},
+    {key:'kaolog',label:'岡山倉',color:'#10b981'},
+    {key:'dadu01',label:'大肚倉',color:'#3b82f6'},
+    {key:'daxi01',label:'大溪倉',color:'#8b5cf6'},
   ];
   let html='';
   for(let i=0;i<warehouses.length;i++){
     const wh=warehouses[i];
     let data=[];
-    try{
-      const r=await window.storage.get(whKey(wh.key),true);
-      if(r&&r.value){const parsed=JSON.parse(r.value);if(Array.isArray(parsed))data=parsed;}
-    }catch(e){}
-    if(!data.length)data=wh.init;
-    const tot=data.length;
-    const pend=data.filter(function(r){return !r.reply;}).length;
-    const ov=data.filter(function(r){return isOverdue(r);}).length;
-    const tr=data.filter(function(r){return r.reply==='轉不良';}).length;
-    const ret=data.filter(function(r){return r.reply==='不良退';}).length;
-    const sw=data.filter(function(r){return r.reply==='不良換';}).length;
+    try{data=await sbFetch('GET',TABLE+'?warehouse=eq.'+wh.key+'&limit=1000',null)||[];}catch(e){}
+    const recs=data.map(dbToRecord);
+    const tot=recs.length,pend=recs.filter(function(r){return !r.reply;}).length,ov=recs.filter(function(r){return isOverdue(r);}).length;
+    const tr=recs.filter(function(r){return r.reply==='轉不良';}).length,ret=recs.filter(function(r){return r.reply==='不良退';}).length,sw=recs.filter(function(r){return r.reply==='不良換';}).length;
     html+='<div class="admin-wh-card">'+
       '<div class="admin-wh-title"><span class="admin-wh-dot" style="background:'+wh.color+'"></span>'+wh.label+'</div>'+
       '<div class="admin-stat-row"><span class="admin-stat-label">總筆數</span><span class="admin-stat-val">'+tot+'</span></div>'+
@@ -941,10 +1012,9 @@ async function loadAdminStats(){
 }
 
 function renderAdminAccounts(){
-  const tbody=document.getElementById('admin-accounts-tbody');
-  tbody.innerHTML=Object.entries(ACCOUNTS).map(function(entry){
+  document.getElementById('admin-accounts-tbody').innerHTML=Object.entries(ACCOUNTS).map(function(entry){
     const id=entry[0],acc=entry[1];
-    return '<tr><td><strong>'+id+'</strong></td><td>'+acc.name+'</td><td><span class="role-badge '+(acc.role==='admin'?'role-admin':'role-user')+'">'+(acc.role==='admin'?'管理員':'倉庫')+'</span></td><td style="color:var(--text3);font-size:11px">'+(acc.whKey?'defect_tracker_wh_'+acc.whKey:'—')+'</td></tr>';
+    return '<tr><td><strong>'+id+'</strong></td><td>'+acc.name+'</td><td><span class="role-badge '+(acc.role==='admin'?'role-admin':'role-user')+'">'+(acc.role==='admin'?'管理員':'倉庫')+'</span></td></tr>';
   }).join('');
 }
 </script>
