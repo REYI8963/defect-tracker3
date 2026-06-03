@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>廠退追蹤系統</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f4f3ef;--surface:#fff;--surface2:#f0efe9;
+  --border:#e0ddd4;--border2:#c8c4b4;
+  --text:#1a1917;--text2:#6b6860;--text3:#9a9890;
+  --blue:#1a56c4;--blue-bg:#e8f0fe;
+  --coral:#c0392b;--coral-bg:#fdecea;
+  --teal:#0f766e;--teal-bg:#e6f7f1;
+  --amber:#92400e;--amber-bg:#fef3c7;
+  --red:#991b1b;--red-bg:#fee2e2;
+  --green:#065f46;--green-bg:#d1fae5;
+  --r:8px;--r-lg:14px;--r-xl:18px;
+  --shadow:0 1px 4px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);
+  --shadow-lg:0 4px 24px rgba(0,0,0,.10);
+  --header-h:60px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:var(--header-h);position:fixed;top:0;left:0;right:0;z-index:50;box-shadow:0 1px 0 var(--border);}
+.header-left{display:flex;align-items:center;gap:12px;}
+.app-name{font-size:17px;font-weight:700;letter-spacing:-0.5px;cursor:pointer;}
+.app-name:hover{color:var(--coral);}
+.wh-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.sync-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;border-radius:20px;font-weight:500;}
+.sync-ok{background:var(--green-bg);color:var(--green);}
+.sync-err{background:var(--red-bg);color:var(--red);}
+.sync-loading{background:var(--amber-bg);color:var(--amber);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn:hover{background:var(--surface2);}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-dark{background:#1a1917;border-color:#1a1917;color:#fff;}
+.btn-dark:hover{background:#333;}
+.btn-sm{padding:5px 11px;font-size:11px;}
+.btn-red{background:#991b1b;border-color:#991b1b;color:#fff;}
+.btn-red:hover{background:#7f1d1d;}
+.main{margin-top:var(--header-h);display:flex;min-height:calc(100vh - var(--header-h));}
+#dashboard-view{flex:1;display:none;align-items:center;justify-content:center;padding:32px 24px;}
+.dash-cards{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;width:100%;max-width:1200px;}
+@media(max-width:900px){.dash-cards{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:600px){.dash-cards{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:transform .18s,box-shadow .18s;}
+.stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);}
+.stat-card.active{outline:2.5px solid #1a1917;outline-offset:2px;}
+.stat-card-icon{font-size:22px;margin-bottom:2px;}
+.stat-card-val{font-size:38px;font-weight:800;line-height:1;letter-spacing:-1.5px;}
+.stat-card-label{font-size:13px;font-weight:600;}
+.stat-card-sub{font-size:11px;color:var(--text3);}
+.card-pending{border-left:4px solid #f59e0b;}.card-pending .stat-card-val{color:#d97706;}
+.card-overdue{border-left:4px solid var(--coral);}.card-overdue .stat-card-val{color:var(--coral);}
+.card-trans{border-left:4px solid var(--blue);}.card-trans .stat-card-val{color:var(--blue);}
+.card-ret{border-left:4px solid #ef4444;}.card-ret .stat-card-val{color:var(--coral);}
+.card-swap{border-left:4px solid var(--teal);}.card-swap .stat-card-val{color:var(--teal);}
+.card-matched{border-left:4px solid #10b981;}.card-matched .stat-card-val{color:var(--green);}
+#table-view{flex:1;display:none;flex-direction:row;}
+#sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:12px 0;display:none;flex-direction:column;gap:2px;overflow-y:auto;transition:width .2s;}
+#sidebar.collapsed{width:52px;}
+#sidebar.collapsed .sidebar-info,#sidebar.collapsed .sidebar-val{display:none;}
+#sidebar.collapsed .sidebar-item{justify-content:center;padding:10px 0;}
+#sidebar.collapsed .sidebar-toggle-label{display:none;}
+#sidebar.collapsed .sidebar-toggle{justify-content:center;}
+#sidebar.collapsed .sidebar-toggle-icon{transform:rotate(180deg);}
+.sidebar-toggle{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 10px;border-bottom:1px solid var(--border);margin-bottom:4px;cursor:pointer;color:var(--text2);font-size:11px;font-weight:600;}
+.sidebar-toggle-icon{transition:transform .2s;font-size:14px;}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:0 8px;border-radius:var(--r);cursor:pointer;transition:background .12s;}
+.sidebar-item:hover{background:var(--surface2);}
+.sidebar-item.active{background:#1a1917;color:#fff;}
+.sidebar-item.active .sidebar-val{color:rgba(255,255,255,.7);}
+.sidebar-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center;}
+.sidebar-info{flex:1;min-width:0;}
+.sidebar-label{font-size:12px;font-weight:600;}
+.sidebar-val{font-size:18px;font-weight:800;color:var(--text);flex-shrink:0;}
+.sidebar-back{display:flex;align-items:center;gap:8px;padding:10px 14px;margin:0 8px 4px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);border:1px solid var(--border);}
+.sidebar-back:hover{background:var(--surface2);}
+.table-area{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+.toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;}
+.search-wrap{position:relative;flex:1;min-width:160px;max-width:280px;}
+.search-wrap input{width:100%;padding:7px 12px 7px 34px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);font-size:12px;outline:none;}
+.search-wrap input:focus{border-color:var(--border2);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);}
+.toolbar select{padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;outline:none;}
+.toolbar-divider{width:1px;height:24px;background:var(--border);margin:0 2px;}
+.row-count{margin-left:auto;font-size:11px;color:var(--text3);white-space:nowrap;font-weight:500;}
+.table-wrap{flex:1;background:var(--surface);margin:12px;border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+.table-scroll{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - var(--header-h) - 100px);}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--surface2);position:sticky;top:0;z-index:10;}
+th{padding:11px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;letter-spacing:.4px;text-transform:uppercase;background:var(--surface2);box-shadow:0 1px 0 var(--border);}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#fafaf6;}
+tbody tr.overdue-warn td{background:#fffbeb;}
+tbody tr.overdue-warn:hover td{background:#fef3c7;}
+tbody tr.overdue-crit td{background:#fff5f5;}
+tbody tr.overdue-crit:hover td{background:#fee8e8;}
+.row-num{color:var(--text3);font-size:11px;font-weight:600;}
+.mono{font-family:'SF Mono','Fira Code',monospace;font-size:11px;}
+.cell-clip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.badge-blue{background:var(--blue-bg);color:var(--blue);}
+.badge-coral{background:var(--coral-bg);color:var(--coral);}
+.badge-teal{background:var(--teal-bg);color:var(--teal);}
+.badge-gray{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.badge-empty{background:#f1f0ea;color:var(--text3);border:1px dashed var(--border2);}
+.overdue-warn-pill{display:inline-flex;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;margin-left:5px;}
+.overdue-crit-pill{display:inline-flex;background:var(--red-bg);color:var(--red);padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;margin-left:5px;}
+.return-date-soon{display:inline-flex;background:#ede9fe;color:#5b21b6;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;margin-left:5px;}
+.return-date-today{display:inline-flex;background:var(--amber-bg);color:var(--amber);padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;margin-left:5px;}
+.return-date-over{display:inline-flex;background:var(--red-bg);color:var(--red);padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;margin-left:5px;}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text3);}
+.empty-icon{font-size:52px;margin-bottom:16px;}
+.empty-state h3{font-size:16px;color:var(--text2);margin-bottom:8px;font-weight:700;}
+.empty-state p{font-size:12px;line-height:1.7;}
+.guide-box{margin-top:24px;background:#fff;border:1.5px dashed #c8c4b4;border-radius:14px;padding:24px 28px;max-width:420px;margin-left:auto;margin-right:auto;text-align:left;}
+.guide-title{font-size:13px;font-weight:700;color:#1a1917;margin-bottom:14px;}
+.guide-steps{display:flex;flex-direction:column;gap:10px;}
+.guide-step{display:flex;align-items:flex-start;gap:10px;font-size:12px;}
+.guide-num{background:#1a1917;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.guide-ok{background:#10b981;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:var(--r-xl);border:1px solid var(--border);width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.modal-header{padding:22px 26px 0;display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.modal-title-icon{width:30px;height:30px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);}
+.modal-close:hover{background:var(--surface2);}
+.modal-body{padding:18px 26px;}
+.modal-footer{padding:16px 26px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.item-card{background:var(--surface2);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;border:1px solid var(--border);}
+.item-card-name{font-weight:700;font-size:14px;margin-bottom:6px;line-height:1.4;}
+.item-card-meta{font-size:11px;color:var(--text2);display:flex;gap:14px;flex-wrap:wrap;}
+.supplier-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-row{display:flex;flex-direction:column;gap:5px;}
+.form-row.full{grid-column:1/-1;}
+.form-row label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.3px;}
+.form-row input,.form-row select,.form-row textarea{padding:9px 11px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:12px;outline:none;font-family:inherit;}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:#1a1917;}
+.form-row textarea{resize:vertical;min-height:76px;}
+.notif-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.notif-overlay.open{display:flex;}
+.notif-box{background:var(--surface);border-radius:var(--r-xl);border:1px solid var(--border);width:520px;max-width:95vw;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.notif-header{padding:22px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.notif-title{font-size:15px;font-weight:700;}
+.notif-body{padding:16px 24px;}
+.notif-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);margin-bottom:8px;border:1px solid var(--border);}
+.notif-item.warn{background:#fffbeb;border-color:#fde68a;}
+.notif-item.crit{background:#fff5f5;border-color:#fecaca;}
+.notif-item-info{flex:1;min-width:0;}
+.notif-item-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.notif-item-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+.notif-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;}
+.batch-bar{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1917;color:#fff;border-radius:var(--r-lg);padding:12px 20px;align-items:center;gap:12px;box-shadow:var(--shadow-lg);z-index:100;white-space:nowrap;}
+.batch-bar.show{display:flex;}
+.batch-divider{width:1px;height:20px;background:rgba(255,255,255,.25);}
+.batch-btn{padding:6px 14px;border-radius:var(--r);border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:12px;font-weight:500;cursor:pointer;}
+.batch-btn:hover{background:rgba(255,255,255,.15);}
+.batch-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:250;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.batch-modal-overlay.open{display:flex;}
+.batch-modal{background:var(--surface);border-radius:var(--r-xl);border:1px solid var(--border);width:440px;max-width:95vw;box-shadow:var(--shadow-lg);}
+.batch-modal-header{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between;}
+.batch-modal-header h2{font-size:15px;font-weight:700;}
+.batch-modal-body{padding:18px 24px;}
+.batch-modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;}
+.th-check,.td-check{width:36px;text-align:center;}
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.88);z-index:400;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+.loading-overlay.show{display:flex;}
+.spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:#1a1917;border-radius:50%;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:13px;color:var(--text2);font-weight:500;}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1917;color:#fff;padding:11px 22px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:500;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow-lg);}
+.toast.show{opacity:1;}
+#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1a1917 0%,#2d2b28 50%,#1a1917 100%);z-index:1000;display:flex;align-items:center;justify-content:center;}
+#login-screen.hidden{display:none;}
+.login-box{background:var(--surface);border-radius:20px;padding:40px 44px;width:400px;max-width:92vw;box-shadow:0 24px 64px rgba(0,0,0,.35);}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
+.login-title{font-size:20px;font-weight:700;letter-spacing:-0.5px;}
+.login-subtitle{font-size:12px;color:var(--text3);margin-top:2px;}
+.login-form{display:flex;flex-direction:column;gap:14px;}
+.login-field{display:flex;flex-direction:column;gap:6px;}
+.login-field label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.4px;}
+.login-field input{padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);font-size:14px;outline:none;transition:border .15s;background:var(--surface2);}
+.login-field input:focus{border-color:#1a1917;background:var(--surface);}
+.login-btn{margin-top:6px;padding:13px;border-radius:var(--r);border:none;background:#D94F2B;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s;}
+.login-btn:hover{background:#c0392b;}
+.login-error{color:#c0392b;font-size:12px;text-align:center;min-height:18px;font-weight:500;}
+.user-badge{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;}
+.user-dot{width:8px;height:8px;border-radius:50%;}
+.logout-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text2);}
+.logout-btn:hover{background:var(--surface2);}
+#admin-view{flex:1;padding:32px;display:none;flex-direction:column;gap:24px;overflow-y:auto;}
+.admin-banner{background:linear-gradient(90deg,#92400e,#d97706);color:#fff;padding:16px 24px;border-radius:var(--r-lg);display:flex;align-items:center;justify-content:space-between;}
+.admin-banner h2{font-size:16px;font-weight:700;}
+.admin-banner p{font-size:12px;opacity:.85;margin-top:2px;}
+.admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media(max-width:700px){.admin-grid{grid-template-columns:1fr;}}
+.admin-wh-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow);}
+.admin-wh-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;margin-bottom:14px;}
+.admin-wh-dot{width:10px;height:10px;border-radius:50%;}
+.admin-stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.admin-stat-row:last-child{border-bottom:none;}
+.admin-stat-label{color:var(--text2);}
+.admin-stat-val{font-weight:700;}
+.admin-stat-val.warn{color:#d97706;}
+.admin-stat-val.danger{color:var(--coral);}
+.admin-stat-val.ok{color:var(--green);}
+.admin-section-title{font-size:14px;font-weight:700;margin-bottom:12px;}
+.admin-accounts-table{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);}
+.admin-accounts-table table{width:100%;}
+.admin-accounts-table th{background:var(--surface2);padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.4px;text-transform:uppercase;}
+.admin-accounts-table td{padding:10px 16px;border-top:1px solid var(--border);font-size:12px;}
+.admin-accounts-table tr:hover td{background:#fafaf6;}
+.role-badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.role-admin{background:var(--amber-bg);color:var(--amber);}
+.role-user{background:var(--blue-bg);color:var(--blue);}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="8" fill="#D94F2B"/><rect x="7" y="17" width="22" height="14" rx="1.5" fill="white" opacity="0.95"/><polygon points="7,17 18,11 18,17" fill="white" opacity="0.7"/><polygon points="18,11 29,17 18,17" fill="white" opacity="0.85"/><line x1="18" y1="17" x2="18" y2="31" stroke="#D94F2B" stroke-width="1.5" opacity="0.35"/><circle cx="27" cy="10" r="5" fill="#FF6B3D"/><path d="M24.5 10 L27 7.5 L27 9 L29.5 9 L29.5 10.5 L27 10.5 L27 12 Z" fill="white"/></svg>
+      <div><div class="login-title">廠退追蹤系統</div><div class="login-subtitle">請輸入帳號與密碼登入</div></div>
+    </div>
+    <div class="login-form">
+      <div class="login-field"><label>帳號</label><input type="text" id="login-user" placeholder="請輸入帳號" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"></div>
+      <div class="login-field"><label>密碼</label><input type="password" id="login-pass" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="login-error" id="login-error"></div>
+      <button class="login-btn" onclick="doLogin()">登入</button>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading-overlay"><div class="spinner"></div><div class="loading-text" id="loading-text">載入資料中...</div></div>
+<div class="toast" id="toast"></div>
+
+<div class="notif-overlay" id="notif-overlay">
+  <div class="notif-box">
+    <div class="notif-header"><div class="notif-title" id="notif-title">通知</div><button class="modal-close" onclick="closeNotif()">✕</button></div>
+    <div class="notif-body" id="notif-body"></div>
+    <div class="notif-footer"><button class="btn btn-dark" id="notif-close-btn" onclick="closeNotif()">知道了</button></div>
+  </div>
+</div>
+
+<div class="batch-modal-overlay" id="batch-modal-overlay">
+  <div class="batch-modal">
+    <div class="batch-modal-header"><h2>✏️ 批次修改 <span id="batch-modal-count"></span> 筆</h2><button class="modal-close" onclick="closeBatchModal()">✕</button></div>
+    <div class="batch-modal-body">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px">只填寫要修改的欄位，空白欄位將保留原值。</p>
+      <div class="form-grid">
+        <div class="form-row"><label>🔖 商流回覆</label><select id="b-reply"><option value="">— 保留原值 —</option><option>轉不良</option><option>不良退</option><option>不良換</option></select></div>
+        <div class="form-row"><label>📅 反映日期</label><input type="date" id="b-date"></div>
+        <div class="form-row"><label>🚚 廠商收退日</label><input type="date" id="b-returnDate"></div>
+        <div class="form-row full"><label>⚠️ 不良原因</label><input type="text" id="b-reason" placeholder="空白 = 保留原值"></div>
+        <div class="form-row full"><label>📝 進度備註</label><textarea id="b-note" placeholder="空白 = 保留原值" style="min-height:60px"></textarea></div>
+        <div class="form-row"><label>👤 處理人員</label><input type="text" id="b-handler" placeholder="空白 = 保留原值"></div>
+      </div>
+    </div>
+    <div class="batch-modal-footer"><button class="btn" onclick="closeBatchModal()">取消</button><button class="btn btn-dark" onclick="applyBatch()">💾 套用</button></div>
+  </div>
+</div>
+
+<div class="batch-bar" id="batch-bar">
+  <span id="batch-count-label">已選 0 筆</span>
+  <div class="batch-divider"></div>
+  <button class="batch-btn" onclick="openBatchModal()">✏️ 批次編輯</button>
+  <button class="batch-btn" onclick="clearSelection()" style="color:rgba(255,255,255,.6)">✕ 取消</button>
+</div>
+
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">✏️</div>編輯追蹤資料</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="item-card">
+        <div class="item-card-name" id="m-name"></div>
+        <div class="item-card-meta" id="m-meta"></div>
+        <div class="supplier-row" id="m-supplier-box" style="display:none">
+          <span style="font-size:11px;color:var(--text3)">🏢 供應商：</span>
+          <span id="m-supplier-name" style="font-size:12px;font-weight:700;color:var(--teal)"></span>
+        </div>
+        <div class="form-row full" style="margin-top:10px">
+          <label>🏢 供應商名稱</label>
+          <input type="text" id="m-supplierName" placeholder="輸入供應商名稱">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label>🔖 商流回覆</label><select id="m-reply"><option value="">-- 未填寫 --</option><option>轉不良</option><option>不良退</option><option>不良換</option></select></div>
+        <div class="form-row"><label>📅 反映日期</label><input type="date" id="m-date"></div>
+        <div class="form-row"><label>🚚 廠商收退日</label><input type="date" id="m-returnDate"></div>
+        <div class="form-row full"><label>⚠️ 不良原因</label><input type="text" id="m-reason" placeholder="例：包裝袋破損*3、無中文標"></div>
+        <div class="form-row full"><label>📝 進度備註</label><textarea id="m-note" placeholder="例：待檔期結束後一起開退"></textarea></div>
+        <div class="form-row"><label>👤 處理人員</label><input type="text" id="m-handler" placeholder="姓名或代號"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal()">取消</button><button class="btn btn-dark" onclick="saveEdit()">💾 儲存</button></div>
+  </div>
+</div>
+
+<div class="header">
+  <div class="header-left">
+    <div onclick="goHome()" style="cursor:pointer">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="8" fill="#D94F2B"/><rect x="7" y="17" width="22" height="14" rx="1.5" fill="white" opacity="0.95"/><polygon points="7,17 18,11 18,17" fill="white" opacity="0.7"/><polygon points="18,11 29,17 18,17" fill="white" opacity="0.85"/><line x1="18" y1="17" x2="18" y2="31" stroke="#D94F2B" stroke-width="1.5" opacity="0.35"/><circle cx="27" cy="10" r="5" fill="#FF6B3D"/><path d="M24.5 10 L27 7.5 L27 9 L29.5 9 L29.5 10.5 L27 10.5 L27 12 Z" fill="white"/></svg>
+    </div>
+    <div class="app-name" onclick="goHome()">廠退追蹤系統</div>
+    <span class="wh-badge" id="wh-badge" style="display:none"></span>
+    <span class="sync-pill sync-loading" id="sync-status">⏳ 連線中...</span>
+    <div class="user-badge" id="user-badge" style="display:none">
+      <span class="user-dot" id="user-dot"></span>
+      <span id="user-display"></span>
+      <button class="logout-btn" onclick="doLogout()">登出</button>
+    </div>
+  </div>
+  <div class="header-right" id="header-actions" style="display:none">
+    <button class="btn" onclick="loadData()" id="btn-refresh">↺ 重新整理</button>
+    <button class="btn btn-dark" onclick="document.getElementById('file-input').click()">⬆ 匯入 Excel</button>
+    <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
+    <button class="btn" onclick="exportData()">⬇ 匯出</button>
+    <button class="btn btn-red" onclick="clearAllData()">🗑 清空資料</button>
+  </div>
+</div>
+
+<div class="main">
+  <div id="dashboard-view" style="flex:1;display:none;align-items:center;justify-content:center;padding:32px 24px;">
+    <div class="dash-cards">
+      <div class="stat-card" onclick="showTable('all')" id="card-all" style="border-left:4px solid #1a1917">
+        <div class="stat-card-icon">📋</div><div class="stat-card-val" id="st-total" style="color:var(--text)">—</div>
+        <div class="stat-card-label">總筆數</div><div class="stat-card-sub">全部不良品項</div>
+      </div>
+      <div class="stat-card card-pending" onclick="showTable('pending')" id="card-pending">
+        <div class="stat-card-icon">⏳</div><div class="stat-card-val" id="st-pending">—</div>
+        <div class="stat-card-label">待處理</div><div class="stat-card-sub">尚未填寫商流回覆</div>
+      </div>
+      <div class="stat-card card-overdue" onclick="showTable('overdue')" id="card-overdue">
+        <div class="stat-card-icon">🚨</div><div class="stat-card-val" id="st-overdue">—</div>
+        <div class="stat-card-label">逾期警示</div><div class="stat-card-sub">反映日期超過 7 天</div>
+      </div>
+      <div class="stat-card card-trans" onclick="showTable('trans')" id="card-trans">
+        <div class="stat-card-icon">🔄</div><div class="stat-card-val" id="st-trans">—</div>
+        <div class="stat-card-label">轉不良</div><div class="stat-card-sub">商流回覆：轉不良</div>
+      </div>
+      <div class="stat-card card-ret" onclick="showTable('ret')" id="card-ret">
+        <div class="stat-card-icon">↩️</div><div class="stat-card-val" id="st-ret">—</div>
+        <div class="stat-card-label">不良退</div><div class="stat-card-sub">商流回覆：不良退</div>
+      </div>
+      <div class="stat-card card-swap" onclick="showTable('swap')" id="card-swap">
+        <div class="stat-card-icon">🔁</div><div class="stat-card-val" id="st-swap">—</div>
+        <div class="stat-card-label">不良換</div><div class="stat-card-sub">商流回覆：不良換</div>
+      </div>
+      <div class="stat-card card-matched" onclick="showTable('matched')" id="card-matched">
+        <div class="stat-card-icon">✅</div><div class="stat-card-val" id="st-matched">—</div>
+        <div class="stat-card-label">已帶入名稱</div><div class="stat-card-sub">成功對比商品主檔</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="table-view" style="flex:1;display:none;flex-direction:row;">
+    <div id="sidebar" style="display:none">
+      <div class="sidebar-toggle" onclick="toggleSidebar()">
+        <span class="sidebar-toggle-label">分類篩選</span><span class="sidebar-toggle-icon">◀</span>
+      </div>
+      <div class="sidebar-item" id="sidebar-all" onclick="filterByCard('all')"><div class="sidebar-icon">📋</div><div class="sidebar-info"><div class="sidebar-label">全部</div></div><div class="sidebar-val" id="sb-val-all">—</div></div>
+      <div class="sidebar-item" id="sidebar-pending" onclick="filterByCard('pending')"><div class="sidebar-icon">⏳</div><div class="sidebar-info"><div class="sidebar-label">待處理</div></div><div class="sidebar-val" id="sb-val-pending">—</div></div>
+      <div class="sidebar-item" id="sidebar-overdue" onclick="filterByCard('overdue')"><div class="sidebar-icon">🚨</div><div class="sidebar-info"><div class="sidebar-label">逾期警示</div></div><div class="sidebar-val" id="sb-val-overdue">—</div></div>
+      <div class="sidebar-item" id="sidebar-trans" onclick="filterByCard('trans')"><div class="sidebar-icon">🔄</div><div class="sidebar-info"><div class="sidebar-label">轉不良</div></div><div class="sidebar-val" id="sb-val-trans">—</div></div>
+      <div class="sidebar-item" id="sidebar-ret" onclick="filterByCard('ret')"><div class="sidebar-icon">↩️</div><div class="sidebar-info"><div class="sidebar-label">不良退</div></div><div class="sidebar-val" id="sb-val-ret">—</div></div>
+      <div class="sidebar-item" id="sidebar-swap" onclick="filterByCard('swap')"><div class="sidebar-icon">🔁</div><div class="sidebar-info"><div class="sidebar-label">不良換</div></div><div class="sidebar-val" id="sb-val-swap">—</div></div>
+      <div class="sidebar-item" id="sidebar-matched" onclick="filterByCard('matched')"><div class="sidebar-icon">✅</div><div class="sidebar-info"><div class="sidebar-label">帶入名稱</div></div><div class="sidebar-val" id="sb-val-matched">—</div></div>
+    </div>
+    <div class="table-area">
+      <div class="toolbar">
+        <button class="btn btn-sm" onclick="showDashboard()">← 返回儀表板</button>
+        <div class="toolbar-divider"></div>
+        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="search" placeholder="搜尋供應商、品名、SKU..." oninput="renderTable()"></div>
+        <select id="filter-sup" onchange="renderTable()" style="max-width:150px"><option value="">🏢 全部供應商</option></select>
+        <select id="filter-reply" onchange="renderTable()"><option value="">🔖 全部商流</option><option>轉不良</option><option>不良退</option><option>不良換</option><option value="__empty">未填寫</option></select>
+        <select id="filter-cat" onchange="renderTable()"><option value="">🏷 全部分類</option><option>預購</option><option>食品</option><option>居家/美妝</option><option>國際線/其它</option></select>
+        <select id="filter-overdue" onchange="renderTable()"><option value="">📅 全部狀態</option><option value="1">🚨 僅逾期</option></select>
+        <span class="row-count" id="row-count"></span>
+      </div>
+      <div class="table-wrap">
+        <div id="empty-state" class="empty-state" style="display:none">
+          <div class="empty-icon">📦</div>
+          <h3 id="empty-title">尚無資料</h3>
+          <p id="empty-desc">請點擊右上角「匯入 Excel」上傳資料</p>
+          <div class="guide-box" id="guide-box" style="display:none">
+            <div class="guide-title">🚀 第一次使用？請依以下步驟操作</div>
+            <div class="guide-steps">
+              <div class="guide-step"><span class="guide-num">1</span><span>準備好倉庫的<strong>不良品明細 Excel 檔</strong>（需包含「明細表」分頁，欄位：項次、供應商代號、儲位、大分類、商品代號、品名、庫存數量）</span></div>
+              <div class="guide-step"><span class="guide-num">2</span><span>點擊右上角 <strong>「⬆ 匯入 Excel」</strong> 按鈕，選取 Excel 檔案</span></div>
+              <div class="guide-step"><span class="guide-num">3</span><span>資料載入後即可開始填寫<strong>商流回覆、不良原因、進度備註</strong>等追蹤資訊</span></div>
+              <div class="guide-step"><span class="guide-ok">✓</span><span>資料會<strong>自動雲端同步</strong>，下次登入無需重新匯入</span></div>
+            </div>
+            <button class="btn btn-dark" style="margin-top:18px;width:100%;justify-content:center;font-size:13px" onclick="document.getElementById('file-input').click()">⬆ 立即匯入 Excel</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table id="main-table" style="display:none">
+            <thead><tr>
+              <th class="th-check"><input type="checkbox" id="check-all" onchange="toggleCheckAll(this)"></th>
+              <th style="width:44px">#</th>
+              <th style="width:86px">供應商代號</th>
+              <th style="width:140px">供應商名稱</th>
+              <th style="width:78px">儲位</th>
+              <th style="width:74px">大分類</th>
+              <th style="width:86px">商品代號</th>
+              <th>品名</th>
+              <th style="width:54px;text-align:right">庫存</th>
+              <th style="width:82px">商流回覆</th>
+              <th style="width:112px">不良原因</th>
+              <th style="width:100px">反映日期</th>
+              <th style="width:110px">廠商收退日</th>
+              <th style="width:134px">進度備註</th>
+              <th style="width:70px">處理人員</th>
+              <th style="width:88px">更新日期</th>
+              <th style="width:48px;position:sticky;right:0;background:var(--surface2);z-index:11;box-shadow:-2px 0 4px rgba(0,0,0,.06)"></th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自訂確認對話框 -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header"><div class="modal-title"><div class="modal-title-icon">⚠️</div><span id="confirm-title">確認</span></div></div>
+      <div class="modal-body"><p id="confirm-msg" style="font-size:13px;line-height:1.7;color:var(--text2)"></p></div>
+      <div class="modal-footer">
+        <button class="btn" id="confirm-cancel">取消</button>
+        <button class="btn btn-red" id="confirm-ok">確定清空</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-view">
+    <div class="admin-banner">
+      <div><h2>👑 管理員後台</h2><p>各倉廠退追蹤統計總覽</p></div>
+      <button class="btn btn-sm" onclick="loadAdminStats()" style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff">↺ 重新整理</button>
+    </div>
+    <div>
+      <div class="admin-section-title">📊 各倉統計總覽</div>
+      <div class="admin-grid" id="admin-wh-grid"></div>
+    </div>
+    <div>
+      <div class="admin-section-title">👤 帳號列表</div>
+      <div class="admin-accounts-table">
+        <table><thead><tr><th>帳號</th><th>倉別</th><th>角色</th><th>Storage Key</th></tr></thead>
+        <tbody id="admin-accounts-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 帳號 ──
+const ACCOUNTS = {
+  'KAOLOG': {password:'8963',     name:'岡山倉', role:'user',  color:'#10b981', whKey:'kaolog', whLabel:'岡山倉'},
+  'DADU01': {password:'1234',     name:'大肚倉', role:'user',  color:'#3b82f6', whKey:'dadu01', whLabel:'大肚倉'},
+  'DAXI01': {password:'0000',     name:'大溪倉', role:'user',  color:'#8b5cf6', whKey:'daxi01', whLabel:'大溪倉'},
+  'NJWU09': {password:'Aa123456', name:'管理員', role:'admin', color:'#f59e0b', whKey:null,     whLabel:null},
+};
+function whKey(k){ return 'defect_tracker_wh_'+k; }
+
+// ── 預設資料 ──
+const KAOLOG_INIT = [{"sn":1,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-057","cat":"預購","sku":"50065379","name":"25gx1_預-造型擦手巾","qty":2,"reply":"轉不良","reason":"無中文標","date":"2026-04-08","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50065379_JA01-057","matchScore":0,"matchFields":[]},{"sn":2,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD04-011","cat":"預購","sku":"50065400","name":"1個x1_贈-Bobo捏捏球","qty":10,"reply":"","reason":"","date":"","returnDate":"","note":"待檔期結束後一起開退","handler":"","updatedAt":"","key":"50065400_JD04-011","matchScore":0,"matchFields":[]},{"sn":3,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD04-011","cat":"預購","sku":"50065401","name":"1個x1_贈-Dinataeng捏捏球","qty":23,"reply":"","reason":"","date":"","returnDate":"","note":"待檔期結束後一起開退","handler":"","updatedAt":"2026-06-02","key":"50065401_JD04-011","matchScore":0,"matchFields":[]},{"sn":4,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-057","cat":"預購","sku":"50068074","name":"1個x1_樂淇蘋果帆布袋","qty":5,"reply":"轉不良","reason":"汙點*4+破損*1","date":"2026-05-14","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068074_JA01-057","matchScore":0,"matchFields":[]},{"sn":5,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-056","cat":"預購","sku":"50068224","name":"1個x1_贈-午后時光重乳奶茶造型","qty":1,"reply":"轉不良","reason":"無中文標","date":"2026-05-20","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068224_JA01-056","matchScore":0,"matchFields":[]},{"sn":6,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-054","cat":"預購","sku":"50068379","name":"1個x1_微醉易開罐造型吊飾","qty":3,"reply":"轉不良","reason":"包裝袋破損*3","date":"2026-05-27","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-05-28","key":"50068379_JA01-054","matchScore":0,"matchFields":[]},{"sn":7,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JA01-054","cat":"預購","sku":"50068380","name":"1個x1_196易開罐造型吊飾","qty":7,"reply":"轉不良","reason":"包裝袋破損*7","date":"2026-05-27","returnDate":"","note":"帶檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-05-28","key":"50068380_JA01-054","matchScore":0,"matchFields":[]},{"sn":8,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD03-011","cat":"預購","sku":"50068382","name":"1個x1_預SUPERDRY多功能收納盒","qty":15,"reply":"轉不良","reason":"凹損*13+破損*2","date":"2026-05-22","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068382_JD03-011","matchScore":0,"matchFields":[]},{"sn":9,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD03-011","cat":"預購","sku":"50068383","name":"1個x1_預)銀色保冰提袋","qty":11,"reply":"轉不良","reason":"汙損*11","date":"2026-05-22","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068383_JD03-011","matchScore":0,"matchFields":[]},{"sn":10,"sup":"000677","supplierName":"全家便利商店股份有限公司","loc":"JD02-011","cat":"預購","sku":"50068385","name":"1個x1_預)冰結手提冰壩杯","qty":6,"reply":"轉不良","reason":"包裝盒破損*6","date":"2026-05-22","returnDate":"","note":"待檔期結束後一起開退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068385_JD02-011","matchScore":0,"matchFields":[]},{"sn":11,"sup":"002054","supplierName":"東輝生物科技有限公司","loc":"JA01-055","cat":"居家/美妝","sku":"50066135","name":"1個x1_團-8骨透明直傘-小白款","qty":1,"reply":"不良退","reason":"包裝袋破損","date":"2026-05-08","returnDate":"","note":"待預購開退時一併聯絡廠商","handler":"吳念臻","updatedAt":"2026-06-02","key":"50066135_JA01-055","matchScore":0,"matchFields":[]},{"sn":12,"sup":"025085","supplierName":"富商國際股份有限公司","loc":"JA01-055","cat":"居家/美妝","sku":"50066809","name":"1支_團-冰川藍-超速乾秒收輕羽傘","qty":1,"reply":"不良退","reason":"無條碼標*1","date":"2026-05-07","returnDate":"","note":"6/2已發信待回覆","handler":"吳念臻","updatedAt":"2026-06-02","key":"50066809_JA01-055","matchScore":0,"matchFields":[]},{"sn":13,"sup":"114923","supplierName":"龍運行銷股份有限公司","loc":"JA01-022","cat":"食品","sku":"50046297","name":"520mlx_C2O100%純椰子水","qty":1,"reply":"不良退","reason":"凹損*1","date":"2026-05-22","returnDate":"","note":"6/2已發信待回覆","handler":"吳念臻","updatedAt":"2026-06-02","key":"50046297_JA01-022","matchScore":0,"matchFields":[]},{"sn":14,"sup":"122078","supplierName":"拌伴餐飲有限公司","loc":"JA01-023","cat":"食品","sku":"20209227","name":"190公克±_團-卡哩卡哩-甜味","qty":1,"reply":"不良退","reason":"無效期標示*1","date":"2026-05-26","returnDate":"","note":"6/2已發信待回覆","handler":"吳念臻","updatedAt":"2026-06-02","key":"20209227_JA01-023","matchScore":0,"matchFields":[]},{"sn":15,"sup":"639880","supplierName":"","loc":"RB04","cat":"居家/美妝","sku":"50068213","name":"1包x1_團-肌淨亮白卸妝棉48片","qty":2,"reply":"不良換","reason":"汙損*2","date":"2026-05-29","returnDate":"","note":"","handler":"吳念臻","updatedAt":"2026-06-02","key":"50068213_RB04","matchScore":0,"matchFields":[]},{"sn":16,"sup":"642282","supplierName":"天然家園國際股份有限公司","loc":"KK01","cat":"食品","sku":"50003369","name":"420gx1_團-東泉辣椒醬","qty":1,"reply":"不良退","reason":"破損*1","date":"","returnDate":"","note":"廠商回覆暫不收退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50003369_KK01","matchScore":0,"matchFields":[]},{"sn":17,"sup":"871561","supplierName":"全台物流股份有限公司","loc":"KK05","cat":"國際線/其它","sku":"50041514","name":"405gx1_團-Dare海鹽蔬菜脆片","qty":1,"reply":"不良退","reason":"","date":"2026-05-22","returnDate":"2026-06-03","note":"全台6/3進貨時一併收退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50041514_KK05","matchScore":0,"matchFields":[]},{"sn":18,"sup":"871561","supplierName":"全台物流股份有限公司","loc":"KK05","cat":"國際線/其它","sku":"50058725","name":"110gx1_團-維力香菜牛肉風味麵","qty":1,"reply":"不良退","reason":"","date":"2026-05-22","returnDate":"2026-06-03","note":"全台6/3進貨時一併收退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50058725_KK05","matchScore":0,"matchFields":[]},{"sn":19,"sup":"871561","supplierName":"全台物流股份有限公司","loc":"KK05","cat":"國際線/其它","sku":"50065874","name":"700g(2_團-超大奇多隨口脆玉米脆","qty":1,"reply":"不良退","reason":"","date":"2026-05-22","returnDate":"2026-06-03","note":"全台6/3進貨時一併收退","handler":"吳念臻","updatedAt":"2026-06-02","key":"50065874_KK05","matchScore":0,"matchFields":[]},{"sn":20,"sup":"257363","supplierName":"富士鮮味股份有限公司","loc":"JC01-011","cat":"預購","sku":"50027687","name":"700ml*_預-富士山麓威士忌中秋禮盒","qty":-28,"reply":"","reason":"","date":"","returnDate":"","note":"開退異常","handler":"","updatedAt":"2026-06-02","key":"50027687_JC01-011","matchScore":0,"matchFields":[]}];
+
+const DADU_INIT = [{"sn":1,"sup":"001001","supplierName":"大肚測試供應商A","loc":"DA01-001","cat":"食品","sku":"60001001","name":"【測試】大肚倉_罐裝飲料","qty":5,"reply":"不良退","reason":"凹損*5","date":"2026-05-20","returnDate":"","note":"⚠️ 測試資料，請清空後匯入正式Excel","handler":"測試員","updatedAt":"2026-06-03","key":"60001001_DA01-001","matchScore":0,"matchFields":[]},{"sn":2,"sup":"001002","supplierName":"大肚測試供應商B","loc":"DA02-003","cat":"居家/美妝","sku":"60001002","name":"【測試】大肚倉_洗髮精","qty":3,"reply":"","reason":"","date":"","returnDate":"","note":"⚠️ 測試資料，請清空後匯入正式Excel","handler":"","updatedAt":"","key":"60001002_DA02-003","matchScore":0,"matchFields":[]}];
+
+const DAXI_INIT = [{"sn":1,"sup":"002001","supplierName":"大溪測試供應商A","loc":"DX01-001","cat":"預購","sku":"70001001","name":"【測試】大溪倉_預購商品","qty":8,"reply":"轉不良","reason":"包裝破損*8","date":"2026-05-25","returnDate":"","note":"⚠️ 測試資料，請清空後匯入正式Excel","handler":"測試員","updatedAt":"2026-06-03","key":"70001001_DX01-001","matchScore":0,"matchFields":[]},{"sn":2,"sup":"002002","supplierName":"大溪測試供應商B","loc":"DX02-005","cat":"食品","sku":"70001002","name":"【測試】大溪倉_零食","qty":2,"reply":"不良換","reason":"汙損*2","date":"2026-05-10","returnDate":"","note":"⚠️ 測試資料，請清空後匯入正式Excel","handler":"測試員","updatedAt":"2026-06-03","key":"70001002_DX02-005","matchScore":0,"matchFields":[]}];
+
+// ── State ──
+let records=[], editIdx=null, currentUser=null, notifShown=false;
+let selectedIdx=new Set();
+
+// ── Helpers ──
+function showLoading(msg){document.getElementById('loading-text').textContent=msg||'處理中...';document.getElementById('loading-overlay').classList.add('show');}
+function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
+function showToast(msg,ms){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms||2500);}
+function setSyncStatus(type,msg){const el=document.getElementById('sync-status');el.className='sync-pill sync-'+type;el.textContent=msg;}
+function formatDate(val){if(!val)return '';const s=String(val).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const d=new Date(s);if(isNaN(d))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function daysSince(ds){if(!ds)return null;const d=new Date(ds);if(isNaN(d))return null;return Math.floor((new Date()-d)/86400000);}
+function daysUntil(ds){if(!ds)return null;const d=new Date(ds);if(isNaN(d))return null;return Math.ceil((d-new Date())/86400000);}
+function overdueLevel(r){const d=daysSince(r.date);if(d===null)return 0;if(d>14)return 2;if(d>7)return 1;return 0;}
+function isOverdue(r){return overdueLevel(r)>0;}
+function normalizeRecord(r){return {...r,qty:isNaN(Number(r.qty))?0:Number(r.qty),sn:isNaN(Number(r.sn))?0:Number(r.sn),matchScore:isNaN(Number(r.matchScore))?0:Number(r.matchScore),matchFields:Array.isArray(r.matchFields)?r.matchFields:[],date:formatDate(r.date),updatedAt:formatDate(r.updatedAt),returnDate:formatDate(r.returnDate),handler:String(r.handler||''),key:String(r.sku||'').trim()+'_'+String(r.loc||'').trim()};}
+
+// ── 登入 / 登出 ──
+function doLogin(){
+  const uid=document.getElementById('login-user').value.trim().toUpperCase();
+  const pw=document.getElementById('login-pass').value;
+  const errEl=document.getElementById('login-error');
+  if(!uid||!pw){errEl.textContent='請輸入帳號與密碼';return;}
+  const acc=ACCOUNTS[uid];
+  if(!acc||acc.password!==pw){errEl.textContent='帳號或密碼錯誤，請重新輸入';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();return;}
+  currentUser={id:uid,...acc};
+  errEl.textContent='';
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('user-badge').style.display='flex';
+  document.getElementById('user-dot').style.background=acc.color;
+  document.getElementById('user-display').textContent=acc.name;
+  if(acc.whLabel){
+    const wb=document.getElementById('wh-badge');
+    wb.textContent=acc.whLabel; wb.style.display='';
+    wb.style.background=acc.color+'22'; wb.style.color=acc.color;
+  }
+  if(acc.role==='admin'){showAdminView();}
+  else{document.getElementById('header-actions').style.display='flex';loadData();}
+}
+
+function doLogout(){
+  if(!confirm('確定要登出嗎？'))return;
+  currentUser=null; records=[];
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('user-badge').style.display='none';
+  document.getElementById('wh-badge').style.display='none';
+  document.getElementById('header-actions').style.display='none';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-error').textContent='';
+  hideAllViews();
+  setSyncStatus('loading','⏳ 連線中...');
+}
+
+// ── 視圖 ──
+function hideAllViews(){
+  document.getElementById('dashboard-view').style.display='none';
+  document.getElementById('table-view').style.display='none';
+  document.getElementById('admin-view').style.display='none';
+  document.getElementById('sidebar').style.display='none';
+}
+function goHome(){if(!currentUser)return;if(currentUser.role==='admin')showAdminView();else showDashboard();}
+function showDashboard(){hideAllViews();document.getElementById('dashboard-view').style.display='flex';}
+function showEmptyGuide(){
+  hideAllViews();
+  document.getElementById('table-view').style.display='flex';
+  document.getElementById('sidebar').style.display='none';
+  document.getElementById('empty-state').style.display='';
+  document.getElementById('main-table').style.display='none';
+  document.getElementById('empty-title').textContent='歡迎使用廠退追蹤系統！';
+  document.getElementById('empty-desc').textContent='此倉尚未匯入任何資料，請依下方步驟開始使用';
+  document.getElementById('guide-box').style.display='';
+}
+function showTableIfHasData(){
+  if(records.length>0){
+    document.getElementById('empty-state').style.display='none';
+    document.getElementById('main-table').style.display='';
+  } else {
+    document.getElementById('empty-state').style.display='';
+    document.getElementById('main-table').style.display='none';
+    document.getElementById('guide-box').style.display='none';
+  }
+}
+
+// ── 資料 ──
+async function loadData(){
+  if(!currentUser||currentUser.role==='admin')return;
+  setSyncStatus('loading','⏳ 讀取中...');
+  document.getElementById('btn-refresh').disabled=true;
+  showLoading('讀取資料中...');
+  try{
+    const result=await window.storage.get(whKey(currentUser.whKey),true);
+    if(result&&result.value){
+      const saved=JSON.parse(result.value);
+      if(saved&&saved.length>0){
+        records=saved.map(normalizeRecord);
+        showToast('✓ 已載入 '+records.length+' 筆');
+        setTimeout(showReturnDateNotif,800);
+      } else {
+        await loadInitForWarehouse();
+      }
+    } else {
+      await loadInitForWarehouse();
+    }
+    renderTable(); updateStats(); setSyncStatus('ok','✓ 已連線');
+    if(records.length===0) showEmptyGuide(); else showDashboard();
+  } catch(e) {
+    await loadInitForWarehouse();
+    renderTable(); updateStats(); setSyncStatus('ok','✓ 本機模式');
+    if(records.length===0) showEmptyGuide(); else showDashboard();
+  }
+  hideLoading();
+  document.getElementById('btn-refresh').disabled=false;
+}
+
+async function loadInitForWarehouse(){
+  if(currentUser.whKey==='kaolog') records=JSON.parse(JSON.stringify(KAOLOG_INIT));
+  else if(currentUser.whKey==='dadu01') records=JSON.parse(JSON.stringify(DADU_INIT));
+  else if(currentUser.whKey==='daxi01') records=JSON.parse(JSON.stringify(DAXI_INIT));
+  else records=[];
+  try{ await window.storage.set(whKey(currentUser.whKey),JSON.stringify(records),true); }catch(e){}
+  showTableIfHasData();
+  if(records.length>0){showToast('✓ 已載入預設資料 '+records.length+' 筆');setTimeout(showReturnDateNotif,800);}
+}
+
+async function saveData(){
+  if(!currentUser||currentUser.role==='admin')return;
+  setSyncStatus('loading','⏳ 儲存中...');
+  try{
+    await window.storage.set(whKey(currentUser.whKey),JSON.stringify(records),true);
+    setSyncStatus('ok','✓ 已同步');
+    showToast('✓ 已儲存');
+  } catch(err) {
+    setSyncStatus('err','✗ 儲存失敗');
+    showToast('⚠ 儲存失敗：'+err.message,5000);
+  }
+}
+
+function clearAllData(){
+  const modal=document.getElementById('confirm-modal');
+  document.getElementById('confirm-title').textContent='清空「'+currentUser.whLabel+'」資料';
+  document.getElementById('confirm-msg').textContent='確定要清空此倉所有資料嗎？此動作無法復原，建議先匯出備份。';
+  document.getElementById('confirm-cancel').onclick=function(){modal.classList.remove('open');};
+  document.getElementById('confirm-ok').textContent='確定清空';
+  document.getElementById('confirm-ok').onclick=function(){
+    modal.classList.remove('open');
+    // 二次確認
+    document.getElementById('confirm-title').textContent='⚠️ 再次確認';
+    document.getElementById('confirm-msg').textContent='資料清空後將完全消失，確定繼續？';
+    document.getElementById('confirm-ok').textContent='是的，清空！';
+    document.getElementById('confirm-ok').onclick=async function(){
+      modal.classList.remove('open');
+      records=[];
+      try{
+        await window.storage.set(whKey(currentUser.whKey),JSON.stringify([]),true);
+        showToast('✓ 已清空所有資料');
+        renderTable(); updateStats();
+        showEmptyGuide();
+        setSyncStatus('ok','✓ 已同步');
+      }catch(e){
+        showToast('⚠ 清空失敗：'+e.message,4000);
+      }
+    };
+    modal.classList.add('open');
+  };
+  modal.classList.add('open');
+}
+
+// ── 匯入 Excel ──
+function handleFile(input){
+  const file=input.files[0]; if(!file)return;
+  showLoading('讀取 Excel 中...');
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      const sn=wb.SheetNames.find(function(n){return n==='明細表';})||wb.SheetNames[1]||wb.SheetNames[0];
+      if(!sn){hideLoading();alert('找不到分頁');return;}
+      const ws=wb.Sheets[sn];
+      const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(raw.length<2){hideLoading();alert('無資料');return;}
+      const hdr=raw[0].map(function(h){return String(h).trim();});
+      const ci={sn:hdr.indexOf('項次'),sup:hdr.indexOf('供應商代號'),loc:hdr.indexOf('儲位'),cat:hdr.indexOf('大分類'),sku:hdr.indexOf('商品代號'),name:hdr.indexOf('品名'),qty:hdr.indexOf('庫存數量')};
+      const newMap={};
+      for(let i=1;i<raw.length;i++){
+        const row=raw[i];
+        const sku=String(row[ci.sku]||'').trim(),loc=String(row[ci.loc]||'').trim();
+        const k=sku+'_'+loc; if(!k||k==='_')continue;
+        newMap[k]={sn:row[ci.sn]||i,sup:String(row[ci.sup]||'').trim(),loc:loc,cat:String(row[ci.cat]||'').trim(),sku:sku,name:String(row[ci.name]||'').trim(),qty:row[ci.qty]!==''?Number(row[ci.qty]):0,reply:'',reason:'',date:'',returnDate:'',note:'',handler:'',updatedAt:'',supplierName:'',matchScore:0,matchFields:[]};
+      }
+      const existMap={};
+      records.forEach(function(r){const k=String(r.sku||'').trim()+'_'+String(r.loc||'').trim();if(k&&k!=='_')existMap[k]=r;});
+      const merged=[];
+      Object.entries(newMap).forEach(function(entry){const k=entry[0],nd=entry[1];if(existMap[k]){const old=existMap[k];merged.push(Object.assign({},old,{qty:nd.qty,sn:nd.sn,name:nd.name}));}else{merged.push(nd);}});
+      const deduped={};
+      merged.forEach(function(r){const k=String(r.sku||'').trim()+'_'+String(r.loc||'').trim();if(!deduped[k])deduped[k]=r;});
+      records=Object.values(deduped).sort(function(a,b){return Number(a.sn)-Number(b.sn);});
+      showTableIfHasData();
+      renderTable(); updateStats();
+      notifShown=false; setTimeout(showReturnDateNotif,600);
+      if(records.length>0) showDashboard();
+      hideLoading(); await saveData();
+    } catch(err) {hideLoading();alert('讀取失敗：'+err.message);}
+    input.value='';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── Render ──
+function replyBadge(v){
+  if(!v)return '<span class="badge badge-empty">未填</span>';
+  if(v==='轉不良')return '<span class="badge badge-blue">轉不良</span>';
+  if(v==='不良退')return '<span class="badge badge-coral">不良退</span>';
+  if(v==='不良換')return '<span class="badge badge-teal">不良換</span>';
+  return '<span class="badge badge-gray">'+v+'</span>';
+}
+
+function renderTable(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const fR=document.getElementById('filter-reply').value;
+  const fC=document.getElementById('filter-cat').value;
+  const fO=document.getElementById('filter-overdue').value;
+  const fS=document.getElementById('filter-sup').value;
+  const rows=records.filter(function(r){
+    if(q&&!([r.sup,r.name,r.sku,r.loc,r.supplierName||''].join(' ').toLowerCase().includes(q)))return false;
+    if(fR==='__empty'&&r.reply)return false;
+    if(fR&&fR!=='__empty'&&r.reply!==fR)return false;
+    if(fC&&r.cat!==fC)return false;
+    if(fO==='1'&&!isOverdue(r))return false;
+    if(fS&&r.sup!==fS)return false;
+    return true;
+  });
+  document.getElementById('row-count').textContent='顯示 '+rows.length+' / '+records.length+' 筆';
+  document.getElementById('tbody').innerHTML=rows.map(function(r){
+    const ri=records.indexOf(r);
+    const odLv=overdueLevel(r),days=daysSince(r.date);
+    const odClass=odLv===2?'overdue-crit':odLv===1?'overdue-warn':'';
+    const odPill=odLv===2?'<span class="overdue-crit-pill">🔴 逾'+days+'天</span>':odLv===1?'<span class="overdue-warn-pill">🟡 逾'+days+'天</span>':'';
+    const dateHtml=r.date?(r.date+odPill):'—';
+    let retHtml='—';
+    if(r.returnDate){
+      const dt=daysUntil(r.returnDate);
+      let pill='';
+      if(dt<0)pill='<span class="return-date-over">已過期</span>';
+      else if(dt===0)pill='<span class="return-date-today">📦 今日收退</span>';
+      else if(dt<=2)pill='<span class="return-date-soon">D-'+dt+'</span>';
+      retHtml=r.returnDate+pill;
+    }
+    const snHtml=r.supplierName?r.supplierName:'<span style="color:var(--text3)">—</span>';
+    return '<tr class="'+odClass+'" onclick="handleRowClick(event,'+ri+')" style="cursor:pointer">'+
+      '<td class="td-check"><input type="checkbox" class="row-check" data-idx="'+ri+'" onchange="onRowCheck(this)"></td>'+
+      '<td class="row-num">'+r.sn+'</td>'+
+      '<td class="mono">'+r.sup+'</td>'+
+      '<td style="font-size:12px">'+snHtml+'</td>'+
+      '<td class="mono">'+r.loc+'</td>'+
+      '<td>'+(r.cat?'<span class="badge badge-gray">'+r.cat+'</span>':'')+'</td>'+
+      '<td class="mono">'+r.sku+'</td>'+
+      '<td class="cell-clip" style="max-width:200px" title="'+r.name+'">'+r.name+'</td>'+
+      '<td style="text-align:right;font-weight:600;'+(r.qty<0?'color:var(--coral)':'')+'">'+r.qty+'</td>'+
+      '<td>'+replyBadge(r.reply)+'</td>'+
+      '<td class="cell-clip" style="max-width:110px;color:var(--text2)" title="'+(r.reason||'')+'">'+(r.reason||'—')+'</td>'+
+      '<td style="white-space:nowrap;font-size:12px">'+dateHtml+'</td>'+
+      '<td style="white-space:nowrap;font-size:12px">'+retHtml+'</td>'+
+      '<td class="cell-clip" style="max-width:130px;color:var(--text2)" title="'+(r.note||'')+'">'+(r.note||'—')+'</td>'+
+      '<td style="font-size:12px">'+(r.handler||'—')+'</td>'+
+      '<td style="font-size:11px;color:var(--text3)">'+(r.updatedAt||'—')+'</td>'+
+      '<td style="position:sticky;right:0;background:var(--surface);box-shadow:-2px 0 4px rgba(0,0,0,.06)"><button class="btn btn-sm" onclick="openEdit('+ri+')">編輯</button></td>'+
+      '</tr>';
+  }).join('');
+}
+
+function updateStats(){
+  const tot=records.length,pend=records.filter(function(r){return !r.reply;}).length,ov=records.filter(function(r){return isOverdue(r);}).length;
+  const tr=records.filter(function(r){return r.reply==='轉不良';}).length,ret=records.filter(function(r){return r.reply==='不良退';}).length,sw=records.filter(function(r){return r.reply==='不良換';}).length,mt=records.filter(function(r){return r.supplierName;}).length;
+  document.getElementById('st-total').textContent=tot;
+  document.getElementById('st-pending').textContent=pend;
+  document.getElementById('st-overdue').textContent=ov;
+  document.getElementById('st-trans').textContent=tr;
+  document.getElementById('st-ret').textContent=ret;
+  document.getElementById('st-swap').textContent=sw;
+  document.getElementById('st-matched').textContent=mt;
+  var sMap={all:tot,pending:pend,overdue:ov,trans:tr,ret:ret,swap:sw,matched:mt};
+  Object.keys(sMap).forEach(function(k){var el=document.getElementById('sb-val-'+k);if(el)el.textContent=sMap[k];});
+  updateSupFilter();
+}
+
+function updateSupFilter(){
+  const sel=document.getElementById('filter-sup'); if(!sel)return;
+  const cur=sel.value,m={};
+  records.forEach(function(r){if(r.sup)m[r.sup]=r.supplierName||r.sup;});
+  sel.innerHTML='<option value="">🏢 全部供應商</option>';
+  Object.entries(m).sort(function(a,b){return a[0].localeCompare(b[0]);}).forEach(function(entry){
+    const code=entry[0],name=entry[1];
+    const o=document.createElement('option');
+    o.value=code; o.textContent=name!==code?code+' '+name:code;
+    if(code===cur)o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+// ── 通知 ──
+function showReturnDateNotif(){
+  const items=records.filter(function(r){if(!r.returnDate)return false;const d=daysUntil(r.returnDate);return d!==null&&d>=0&&d<=2;}).sort(function(a,b){return daysUntil(a.returnDate)-daysUntil(b.returnDate);});
+  if(!items.length){showOverdueNotif();return;}
+  document.getElementById('notif-title').textContent='🚚 廠商收退提醒';
+  let html='<div style="font-size:11px;font-weight:700;color:#5b21b6;margin-bottom:12px">以下品項廠商即將收退，請盡速處理！</div>';
+  items.forEach(function(r){const d=daysUntil(r.returnDate);const label=d===0?'📦 今日收退':'D-'+d;const cls=d===0?'return-date-today':'return-date-soon';html+='<div class="notif-item" style="background:'+(d===0?'#fef3c7':'#f5f3ff')+';border-color:'+(d===0?'#fde68a':'#c4b5fd')+'"><div style="font-size:22px">🚚</div><div class="notif-item-info"><div class="notif-item-name">'+r.name+'</div><div class="notif-item-meta">供應商：'+r.sup+'　儲位：'+r.loc+'　收退日：<strong>'+r.returnDate+'</strong></div></div><span class="'+cls+'">'+label+'</span></div>';});
+  document.getElementById('notif-body').innerHTML=html;
+  document.getElementById('notif-close-btn').onclick=function(){closeNotif();setTimeout(showOverdueNotif,300);};
+  document.getElementById('notif-overlay').classList.add('open');
+}
+function showOverdueNotif(){
+  if(notifShown)return;
+  const items=records.filter(function(r){return overdueLevel(r)>0&&!r.note;}).sort(function(a,b){return daysSince(b.date)-daysSince(a.date);});
+  if(!items.length)return;
+  notifShown=true;
+  document.getElementById('notif-title').textContent='🚨 逾期品項通知';
+  const crit=items.filter(function(r){return overdueLevel(r)===2;}),warn=items.filter(function(r){return overdueLevel(r)===1;});
+  let html='';
+  if(crit.length){html+='<div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px">🔴 嚴重逾期（超過14天）— '+crit.length+' 筆</div>';crit.forEach(function(r){const d=daysSince(r.date);html+='<div class="notif-item crit"><div style="font-size:20px">🚨</div><div class="notif-item-info"><div class="notif-item-name">'+r.name+'</div><div class="notif-item-meta">供應商：'+r.sup+'　逾期 '+d+' 天</div></div><span class="overdue-crit-pill">逾'+d+'天</span></div>';});}
+  if(warn.length){if(crit.length)html+='<div style="height:12px"></div>';html+='<div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:8px">🟡 逾期警示（7–14天）— '+warn.length+' 筆</div>';warn.forEach(function(r){const d=daysSince(r.date);html+='<div class="notif-item warn"><div style="font-size:20px">⚠️</div><div class="notif-item-info"><div class="notif-item-name">'+r.name+'</div><div class="notif-item-meta">供應商：'+r.sup+'　逾期 '+d+' 天</div></div><span class="overdue-warn-pill">逾'+d+'天</span></div>';});}
+  document.getElementById('notif-body').innerHTML=html;
+  document.getElementById('notif-close-btn').onclick=function(){closeNotif();};
+  document.getElementById('notif-overlay').classList.add('open');
+}
+function closeNotif(){document.getElementById('notif-overlay').classList.remove('open');}
+
+// ── 視圖切換 ──
+function showTable(key){
+  hideAllViews();
+  document.getElementById('table-view').style.display='flex';
+  const sb=document.getElementById('sidebar');
+  sb.style.display='flex';
+  if(!sb.classList.contains('collapsed'))sb.classList.add('collapsed');
+  // 確保表格/空白狀態正確顯示
+  showTableIfHasData();
+  filterByCard(key);
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed');}
+function filterByCard(key){
+  document.querySelectorAll('.sidebar-item').forEach(function(el){el.classList.remove('active');});
+  const sEl=document.getElementById('sidebar-'+key); if(sEl)sEl.classList.add('active');
+  document.querySelectorAll('.stat-card').forEach(function(el){el.classList.remove('active');});
+  const cEl=document.getElementById('card-'+key); if(cEl)cEl.classList.add('active');
+  const replyEl=document.getElementById('filter-reply'),ovEl=document.getElementById('filter-overdue');
+  replyEl.value=''; ovEl.value='';
+  if(key==='pending')replyEl.value='__empty';
+  else if(key==='overdue')ovEl.value='1';
+  else if(key==='trans')replyEl.value='轉不良';
+  else if(key==='ret')replyEl.value='不良退';
+  else if(key==='swap')replyEl.value='不良換';
+  renderTable();
+}
+
+// ── 批次 ──
+function onRowCheck(cb){const idx=parseInt(cb.dataset.idx);if(cb.checked)selectedIdx.add(idx);else selectedIdx.delete(idx);updateBatchBar();}
+function toggleCheckAll(cb){document.querySelectorAll('.row-check').forEach(function(el){el.checked=cb.checked;const idx=parseInt(el.dataset.idx);if(cb.checked)selectedIdx.add(idx);else selectedIdx.delete(idx);});updateBatchBar();}
+function updateBatchBar(){const bar=document.getElementById('batch-bar');document.getElementById('batch-count-label').textContent='已選 '+selectedIdx.size+' 筆';if(selectedIdx.size>0)bar.classList.add('show');else bar.classList.remove('show');}
+function clearSelection(){selectedIdx.clear();document.querySelectorAll('.row-check').forEach(function(el){el.checked=false;});var ca=document.getElementById('check-all');if(ca)ca.checked=false;updateBatchBar();}
+function openBatchModal(){if(!selectedIdx.size)return;document.getElementById('batch-modal-count').textContent=selectedIdx.size;['b-reply','b-date','b-returnDate','b-reason','b-note','b-handler'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('batch-modal-overlay').classList.add('open');}
+function closeBatchModal(){document.getElementById('batch-modal-overlay').classList.remove('open');}
+async function applyBatch(){
+  const reply=document.getElementById('b-reply').value,date=document.getElementById('b-date').value,returnDate=document.getElementById('b-returnDate').value,reason=document.getElementById('b-reason').value,note=document.getElementById('b-note').value,handler=document.getElementById('b-handler').value,cnt=selectedIdx.size;
+  selectedIdx.forEach(function(idx){var r=records[idx];if(reply)r.reply=reply;if(date)r.date=date;if(returnDate)r.returnDate=returnDate;if(reason)r.reason=reason;if(note)r.note=note;if(handler)r.handler=handler;r.updatedAt=todayStr();});
+  closeBatchModal();clearSelection();renderTable();updateStats();await saveData();showToast('✓ 已批次更新 '+cnt+' 筆');
+}
+
+// ── 單筆編輯 ──
+function openEdit(idx){
+  editIdx=idx;const r=records[idx];
+  document.getElementById('m-name').textContent=r.name;
+  document.getElementById('m-meta').innerHTML='<span>供應商：'+r.sup+'</span><span>儲位：'+r.loc+'</span><span>SKU：'+r.sku+'</span><span>庫存：'+r.qty+'</span>';
+  const sb=document.getElementById('m-supplier-box');
+  if(r.supplierName){sb.style.display='flex';document.getElementById('m-supplier-name').textContent=r.supplierName;}else{sb.style.display='none';}
+  document.getElementById('m-supplierName').value=r.supplierName||'';
+  document.getElementById('m-reply').value=r.reply||'';
+  document.getElementById('m-reason').value=r.reason||'';
+  document.getElementById('m-date').value=r.date||'';
+  document.getElementById('m-returnDate').value=r.returnDate||'';
+  document.getElementById('m-note').value=r.note||'';
+  document.getElementById('m-handler').value=r.handler||'';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('edit-modal').classList.remove('open');editIdx=null;}
+async function saveEdit(){
+  if(editIdx===null)return;
+  const r=records[editIdx];
+  r.reply=document.getElementById('m-reply').value;
+  r.reason=document.getElementById('m-reason').value;
+  r.date=document.getElementById('m-date').value;
+  r.returnDate=document.getElementById('m-returnDate').value;
+  r.note=document.getElementById('m-note').value;
+  r.handler=document.getElementById('m-handler').value;
+  r.supplierName=document.getElementById('m-supplierName').value||r.supplierName||'';
+  r.updatedAt=todayStr();
+  closeModal();renderTable();updateStats();await saveData();
+}
+document.getElementById('edit-modal').addEventListener('click',function(e){if(e.target===document.getElementById('edit-modal'))closeModal();});
+function handleRowClick(event,idx){if(event.target.type==='checkbox'||event.target.tagName==='BUTTON'||event.target.closest('button'))return;openEdit(idx);}
+
+// ── 匯出 ──
+function exportData(){
+  if(!records.length){showToast('⚠ 尚無資料可匯出');return;}
+  const today=new Date().toISOString().slice(0,10);
+  const rows=records.map(function(r){return {'項次':r.sn,'供應商代號':r.sup,'供應商名稱':r.supplierName||'','儲位':r.loc,'大分類':r.cat,'商品代號':r.sku,'品名':r.name,'庫存數量':r.qty,'商流回覆':r.reply||'未填','不良原因':r.reason||'','反映日期':r.date||'','廠商收退日':r.returnDate||'','逾期天數':r.date&&daysSince(r.date)>0?daysSince(r.date)+'天':'','進度備註':r.note||'','處理人員':r.handler||'','更新日期':r.updatedAt||''};});
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:6},{wch:12},{wch:20},{wch:10},{wch:10},{wch:12},{wch:35},{wch:8},{wch:10},{wch:18},{wch:12},{wch:12},{wch:10},{wch:25},{wch:10},{wch:12}];
+  const wb2=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2,ws,'不良品明細');
+  const buf=XLSX.write(wb2,{bookType:'xlsx',type:'array'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'}));
+  a.download='廠退追蹤_'+(currentUser?currentUser.whLabel:'')+'_'+today+'.xlsx';
+  a.click();
+  showToast('✓ 已匯出 '+records.length+' 筆');
+}
+
+// ── 管理員後台 ──
+function showAdminView(){
+  hideAllViews();
+  document.getElementById('admin-view').style.display='flex';
+  loadAdminStats();
+  renderAdminAccounts();
+}
+
+async function loadAdminStats(){
+  const grid=document.getElementById('admin-wh-grid');
+  grid.innerHTML='<div style="color:var(--text3);font-size:12px;padding:16px">載入中...</div>';
+  const warehouses=[
+    {key:'kaolog',label:'岡山倉',color:'#10b981',init:KAOLOG_INIT},
+    {key:'dadu01',label:'大肚倉',color:'#3b82f6',init:DADU_INIT},
+    {key:'daxi01',label:'大溪倉',color:'#8b5cf6',init:DAXI_INIT},
+  ];
+  let html='';
+  for(let i=0;i<warehouses.length;i++){
+    const wh=warehouses[i];
+    let data=[];
+    try{
+      const r=await window.storage.get(whKey(wh.key),true);
+      if(r&&r.value){const parsed=JSON.parse(r.value);if(Array.isArray(parsed))data=parsed;}
+    }catch(e){}
+    if(!data.length)data=wh.init;
+    const tot=data.length;
+    const pend=data.filter(function(r){return !r.reply;}).length;
+    const ov=data.filter(function(r){return isOverdue(r);}).length;
+    const tr=data.filter(function(r){return r.reply==='轉不良';}).length;
+    const ret=data.filter(function(r){return r.reply==='不良退';}).length;
+    const sw=data.filter(function(r){return r.reply==='不良換';}).length;
+    html+='<div class="admin-wh-card">'+
+      '<div class="admin-wh-title"><span class="admin-wh-dot" style="background:'+wh.color+'"></span>'+wh.label+'</div>'+
+      '<div class="admin-stat-row"><span class="admin-stat-label">總筆數</span><span class="admin-stat-val">'+tot+'</span></div>'+
+      '<div class="admin-stat-row"><span class="admin-stat-label">待處理</span><span class="admin-stat-val '+(pend>0?'warn':'ok')+'">'+pend+'</span></div>'+
+      '<div class="admin-stat-row"><span class="admin-stat-label">逾期警示</span><span class="admin-stat-val '+(ov>0?'danger':'ok')+'">'+ov+'</span></div>'+
+      '<div class="admin-stat-row"><span class="admin-stat-label">轉不良</span><span class="admin-stat-val">'+tr+'</span></div>'+
+      '<div class="admin-stat-row"><span class="admin-stat-label">不良退</span><span class="admin-stat-val">'+ret+'</span></div>'+
+      '<div class="admin-stat-row"><span class="admin-stat-label">不良換</span><span class="admin-stat-val">'+sw+'</span></div>'+
+      '</div>';
+  }
+  grid.innerHTML=html;
+}
+
+function renderAdminAccounts(){
+  const tbody=document.getElementById('admin-accounts-tbody');
+  tbody.innerHTML=Object.entries(ACCOUNTS).map(function(entry){
+    const id=entry[0],acc=entry[1];
+    return '<tr><td><strong>'+id+'</strong></td><td>'+acc.name+'</td><td><span class="role-badge '+(acc.role==='admin'?'role-admin':'role-user')+'">'+(acc.role==='admin'?'管理員':'倉庫')+'</span></td><td style="color:var(--text3);font-size:11px">'+(acc.whKey?'defect_tracker_wh_'+acc.whKey:'—')+'</td></tr>';
+  }).join('');
+}
+</script>
+</body>
+</html>
