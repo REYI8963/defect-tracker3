@@ -23,7 +23,116 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;}
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:var(--header-h);position:fixed;top:0;left:0;right:0;z-index:50;}
+
+/* ═══════════════════════════
+   登入畫面
+═══════════════════════════ */
+#login-screen{
+  position:fixed;inset:0;z-index:1000;
+  background:linear-gradient(160deg,#f8f6f2 0%,#ede9e0 50%,#f0ece4 100%);
+  overflow:hidden;
+}
+#login-screen.hidden{display:none;}
+
+/* 裝飾圓圈 + 動畫 */
+.ld{position:absolute;border-radius:50%;background:#c0392b;opacity:.07;pointer-events:none;}
+.ld1{width:420px;height:420px;top:-110px;right:-90px;animation:float1 8s ease-in-out infinite;}
+.ld2{width:260px;height:260px;bottom:100px;left:-70px;animation:float2 10s ease-in-out infinite;}
+.ld3{width:160px;height:160px;top:38%;right:8%;animation:float3 7s ease-in-out infinite;}
+@keyframes float1{
+  0%,100%{transform:translate(0,0) scale(1);}
+  50%{transform:translate(-20px,15px) scale(1.05);}
+}
+@keyframes float2{
+  0%,100%{transform:translate(0,0) scale(1);}
+  50%{transform:translate(15px,-20px) scale(1.08);}
+}
+@keyframes float3{
+  0%,100%{transform:translate(0,0) scale(1);}
+  33%{transform:translate(-10px,12px) scale(0.95);}
+  66%{transform:translate(10px,-8px) scale(1.06);}
+}
+
+/* 路面 */
+.road-line{position:absolute;bottom:54px;left:0;right:0;height:3px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,#d4cfc4 20%,#d4cfc4 80%,transparent);}
+.road-dash{position:absolute;bottom:64px;left:0;right:0;height:2px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,#c8c4b4 0,#c8c4b4 28px,transparent 28px,transparent 58px);
+  animation:rdash 1s linear infinite;}
+@keyframes rdash{to{background-position:58px 0;}}
+
+/* 貨車動畫 */
+.truck-wrap{position:absolute;bottom:58px;pointer-events:none;white-space:nowrap;
+  animation:truckgo 5s linear infinite;}
+.truck-emoji{font-size:40px;display:inline-block;transform:scaleX(-1);}
+.truck-dust{display:inline-block;vertical-align:bottom;margin-left:4px;}
+.dust-dot{display:inline-block;border-radius:50%;background:rgba(170,160,145,.55);
+  animation:dFloat .55s ease-in-out infinite alternate;}
+.dust-dot:nth-child(1){width:9px;height:9px;}
+.dust-dot:nth-child(2){width:6px;height:6px;animation-delay:.12s;}
+.dust-dot:nth-child(3){width:7px;height:7px;animation-delay:.25s;}
+@keyframes truckgo{
+  0%  {left:105vw; opacity:0;}
+  4%  {opacity:1;}
+  94% {opacity:1;}
+  100%{left:-12vw; opacity:0;}
+}
+@keyframes dFloat{
+  from{transform:translateY(0);}
+  to{transform:translateY(-9px);opacity:0;}
+}
+
+/* 登入卡片置中 */
+.login-center{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:420px;max-width:92vw;
+}
+.login-card{
+  background:rgba(255,255,255,.93);
+  border-radius:22px;
+  padding:32px 40px 36px;
+  box-shadow:0 8px 48px rgba(192,57,43,.13),0 2px 8px rgba(0,0,0,.06);
+  border:1px solid rgba(255,255,255,.85);
+}
+.login-logo-row{display:flex;justify-content:center;margin-bottom:14px;}
+.login-head{text-align:center;margin-bottom:26px;}
+.login-head h1{font-size:22px;font-weight:800;letter-spacing:-.5px;color:#1a1917;}
+.login-head p{font-size:12px;color:#9a9890;margin-top:5px;}
+.lf-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.lf-group label{font-size:11px;font-weight:600;color:#6b6860;letter-spacing:.4px;}
+.lf-group input{
+  padding:11px 14px;border:1.5px solid #e0ddd4;border-radius:8px;
+  font-size:14px;outline:none;background:#faf9f7;font-family:inherit;transition:border-color .15s;
+}
+.lf-group input:focus{border-color:#c0392b;background:#fff;}
+.login-err{color:#c0392b;font-size:12px;text-align:center;min-height:18px;font-weight:500;margin-bottom:4px;}
+.login-submit{
+  width:100%;padding:13px;border:none;border-radius:8px;
+  background:#c0392b;color:#fff;font-size:14px;font-weight:700;
+  cursor:pointer;letter-spacing:.3px;transition:background .15s;
+}
+.login-submit:hover{background:#a93226;}
+.login-pw-link{text-align:center;margin-top:12px;}
+.login-pw-link button{
+  background:none;border:none;color:#9a9890;font-size:11px;
+  cursor:pointer;text-decoration:underline;
+}
+.login-pw-link button:hover{color:#6b6860;}
+
+/* 修改密碼 modal */
+.cpw-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:1100;
+  align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.cpw-overlay.open{display:flex;}
+.cpw-box{background:#fff;border-radius:18px;padding:32px 36px;width:380px;max-width:92vw;box-shadow:var(--shadow-lg);}
+.cpw-title{font-size:16px;font-weight:700;margin-bottom:20px;}
+.cpw-form{display:flex;flex-direction:column;gap:12px;}
+.cpw-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
+
+/* ═══════════════════════════
+   Header
+═══════════════════════════ */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:var(--header-h);position:fixed;top:0;left:0;right:0;z-index:50;box-shadow:0 1px 0 var(--border);}
 .header-left{display:flex;align-items:center;gap:12px;}
 .app-name{font-size:17px;font-weight:700;letter-spacing:-0.5px;cursor:pointer;}
 .app-name:hover{color:var(--coral);}
@@ -41,6 +150,14 @@ body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;
 .btn-sm{padding:5px 11px;font-size:11px;}
 .btn-red{background:#991b1b;border-color:#991b1b;color:#fff;}
 .btn-red:hover{background:#7f1d1d;}
+.user-badge{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;}
+.user-dot{width:8px;height:8px;border-radius:50%;}
+.logout-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text2);}
+.logout-btn:hover{background:var(--surface2);}
+
+/* ═══════════════════════════
+   Main layout
+═══════════════════════════ */
 .main{margin-top:var(--header-h);display:flex;min-height:calc(100vh - var(--header-h));}
 #dashboard-view{flex:1;display:none;align-items:center;justify-content:center;padding:32px 24px;}
 .dash-cards{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;width:100%;max-width:1200px;}
@@ -176,54 +293,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 .loading-text{font-size:13px;color:var(--text2);font-weight:500;}
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1917;color:#fff;padding:11px 22px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:500;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow-lg);}
 .toast.show{opacity:1;}
-#login-screen{position:fixed;inset:0;background:linear-gradient(160deg,#f8f6f2 0%,#ede9e0 50%,#f0ece4 100%);z-index:1000;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-#login-screen.hidden{display:none;}
-/* 貨車動畫 */
-.truck-scene{position:absolute;bottom:60px;left:0;right:0;height:80px;pointer-events:none;overflow:hidden;}
-.truck-road{position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#d4cfc4 20%,#d4cfc4 80%,transparent);}
-.truck-road-dashes{position:absolute;bottom:10px;left:0;right:0;height:2px;background:repeating-linear-gradient(90deg,#c8c4b4 0px,#c8c4b4 30px,transparent 30px,transparent 60px);animation:roadMove 1s linear infinite;}
-.truck{position:absolute;bottom:8px;font-size:42px;animation:truckDrive 4s cubic-bezier(.25,.46,.45,.94) forwards;left:-120px;}
-.truck-dust{position:absolute;bottom:10px;animation:dustMove 4s cubic-bezier(.25,.46,.45,.94) forwards;left:-80px;}
-.dust-particle{display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(180,170,155,.5);margin:0 2px;animation:dustFloat 0.6s ease-out infinite alternate;}
-.dust-particle:nth-child(2){width:5px;height:5px;animation-delay:.15s;}
-.dust-particle:nth-child(3){width:6px;height:6px;animation-delay:.3s;}
-@keyframes truckDrive{0%{left:-120px;opacity:0;}10%{opacity:1;}70%{left:calc(50% - 80px);}85%{left:calc(50% - 60px);}100%{left:calc(50% - 60px);}}
-@keyframes dustMove{0%{left:-80px;opacity:0;}10%{opacity:1;}70%{left:calc(50% - 140px);opacity:.8;}100%{left:calc(50% - 140px);opacity:0;}}
-@keyframes dustFloat{from{transform:translateY(0) scale(1);}to{transform:translateY(-8px) scale(1.3);opacity:0;}}
-@keyframes roadMove{from{background-position:0 0;}to{background-position:-60px 0;}}
-/* 裝飾圓圈 */
-.login-deco{position:absolute;border-radius:50%;opacity:.06;}
-.login-deco-1{width:400px;height:400px;background:#c0392b;top:-100px;right:-80px;}
-.login-deco-2{width:250px;height:250px;background:#c0392b;bottom:80px;left:-60px;}
-.login-deco-3{width:150px;height:150px;background:#c0392b;top:40%;right:10%;}
-/* 登入卡片 */
-.login-box{background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-radius:24px;padding:40px 44px;width:420px;max-width:92vw;box-shadow:0 8px 48px rgba(192,57,43,.12),0 2px 8px rgba(0,0,0,.06);border:1px solid rgba(255,255,255,.8);position:relative;z-index:2;}
-.login-logo-area{display:flex;flex-direction:column;align-items:center;margin-bottom:28px;gap:12px;}
-.login-logo-img{width:72px;height:72px;object-fit:contain;}
-.login-title{font-size:22px;font-weight:800;letter-spacing:-0.5px;color:#1a1917;text-align:center;}
-.login-subtitle{font-size:12px;color:var(--text3);text-align:center;margin-top:2px;}
-.login-form{display:flex;flex-direction:column;gap:14px;}
-.login-field{display:flex;flex-direction:column;gap:6px;}
-.login-field label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.4px;}
-.login-field input{padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);font-size:14px;outline:none;transition:border .15s;background:#faf9f7;}
-.login-field input:focus{border-color:#c0392b;background:var(--surface);}
-.login-btn{margin-top:6px;padding:13px;border-radius:var(--r);border:none;background:#c0392b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s;letter-spacing:.3px;}
-.login-btn:hover{background:#a93226;}
-.login-error{color:#c0392b;font-size:12px;text-align:center;min-height:18px;font-weight:500;}
-.login-change-pw{text-align:center;margin-top:4px;}
-.login-change-pw button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;}
-.login-change-pw button:hover{color:var(--text2);}
-/* 修改密碼 modal */
-.change-pw-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1100;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
-.change-pw-modal.open{display:flex;}
-.change-pw-box{background:#fff;border-radius:var(--r-xl);padding:32px 36px;width:380px;max-width:92vw;box-shadow:var(--shadow-lg);}
-.change-pw-title{font-size:16px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
-.change-pw-form{display:flex;flex-direction:column;gap:12px;}
-.change-pw-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
-.user-badge{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;}
-.user-dot{width:8px;height:8px;border-radius:50%;}
-.logout-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text2);}
-.logout-btn:hover{background:var(--surface2);}
 #admin-view{flex:1;padding:32px;display:none;flex-direction:column;gap:24px;overflow-y:auto;}
 .admin-banner{background:linear-gradient(90deg,#92400e,#d97706);color:#fff;padding:16px 24px;border-radius:var(--r-lg);display:flex;align-items:center;justify-content:space-between;}
 .admin-banner h2{font-size:16px;font-weight:700;}
@@ -252,50 +321,65 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 </head>
 <body>
 
+<!-- ═══════════════════════════
+     登入畫面
+═══════════════════════════ -->
 <div id="login-screen">
-  <!-- 裝飾 -->
-  <div class="login-deco login-deco-1"></div>
-  <div class="login-deco login-deco-2"></div>
-  <div class="login-deco login-deco-3"></div>
-  <!-- 貨車動畫 -->
-  <div class="truck-scene">
-    <div class="truck-road"></div>
-    <div class="truck-road-dashes"></div>
-    <div class="truck">🚚</div>
-    <div class="truck-dust"><span class="dust-particle"></span><span class="dust-particle"></span><span class="dust-particle"></span></div>
+  <!-- 裝飾圓 -->
+  <div class="ld ld1"></div>
+  <div class="ld ld2"></div>
+  <div class="ld ld3"></div>
+  <!-- 路面 -->
+  <div class="road-line"></div>
+  <div class="road-dash"></div>
+  <div class="truck-wrap">
+    <span style="font-size:40px;display:inline-block;">🚚</span>
+    <span class="truck-dust">
+      <span class="dust-dot"></span>
+      <span class="dust-dot"></span>
+      <span class="dust-dot"></span>
+    </span>
   </div>
-  <!-- 登入卡片 -->
-  <div class="login-box">
-    <div class="login-logo-area">
-      <img class="login-logo-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAT4AAAFKCAYAAACVCMFhAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAADMwSURBVHgB7d0HmFxV+T/w75RtSTa9kUYgQBJ6770XFVQsWBBBUBEFRKQoKopSBRUQRUA6SO9FegktlPQQ0nvfbDL1/p/33Dube+/O3J3dmdm5M/P9PE8Su7Mzc/fOmXfPec97ipYCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==" alt="logo" onerror="this.style.display='none'">
-      <div>
-        <div class="login-title">廠退追蹤系統</div>
-        <div class="login-subtitle">請輸入帳號與密碼登入</div>
+  <!-- 卡片置中 -->
+  <div class="login-center">
+    <div class="login-card">
+      <!-- Logo -->
+      <div class="login-logo-row">
+        
       </div>
+      <div class="login-head">
+        <h1>廠退追蹤系統</h1>
+        <p>請輸入帳號與密碼登入</p>
+      </div>
+      <div class="lf-group">
+        <label>帳號</label>
+        <input type="text" id="login-user" placeholder="請輸入帳號"
+          onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+      </div>
+      <div class="lf-group">
+        <label>密碼</label>
+        <input type="password" id="login-pass" placeholder="請輸入密碼"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-err" id="login-error"></div>
+      <button class="login-submit" onclick="doLogin()">登入</button>
+      <div class="login-pw-link"><button onclick="openChangePw()">🔑 修改密碼</button></div>
     </div>
-    <div class="login-form">
-      <div class="login-field"><label>帳號</label><input type="text" id="login-user" placeholder="請輸入帳號" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"></div>
-      <div class="login-field"><label>密碼</label><input type="password" id="login-pass" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin()"></div>
-      <div class="login-error" id="login-error"></div>
-      <button class="login-btn" onclick="doLogin()">登入</button>
-    </div>
-    <div class="login-change-pw"><button onclick="openChangePw()">🔑 修改密碼</button></div>
   </div>
 </div>
 
-<!-- 修改密碼 Modal -->
-<div class="change-pw-modal" id="change-pw-modal">
-  <div class="change-pw-box">
-    <div class="change-pw-title">🔑 修改密碼</div>
-    <div class="change-pw-form">
+<!-- 修改密碼 -->
+<div class="cpw-overlay" id="change-pw-modal">
+  <div class="cpw-box">
+    <div class="cpw-title">🔑 修改密碼</div>
+    <div class="cpw-form">
       <div class="form-row"><label>帳號</label><input type="text" id="cp-user" placeholder="請輸入帳號"></div>
       <div class="form-row"><label>舊密碼</label><input type="password" id="cp-old" placeholder="請輸入舊密碼"></div>
-      <div class="form-row"><label>新密碼</label><input type="password" id="cp-new" placeholder="請輸入新密碼（至少4碼）"></div>
-      <div class="form-row"><label>確認新密碼</label><input type="password" id="cp-confirm" placeholder="再次輸入新密碼"></div>
-      <div class="login-error" id="cp-error"></div>
+      <div class="form-row"><label>新密碼</label><input type="password" id="cp-new" placeholder="至少4碼"></div>
+      <div class="form-row"><label>確認新密碼</label><input type="password" id="cp-confirm" placeholder="再次輸入"></div>
+      <div class="login-err" id="cp-error"></div>
     </div>
-    <div class="change-pw-footer">
+    <div class="cpw-footer">
       <button class="btn" onclick="closeChangePw()">取消</button>
       <button class="btn btn-dark" onclick="doChangePw()">確認修改</button>
     </div>
@@ -467,7 +551,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==" alt="logo" onerror
           <div class="guide-box" id="guide-box" style="display:none">
             <div class="guide-title">🚀 第一次使用？請依以下步驟操作</div>
             <div class="guide-steps">
-              <div class="guide-step"><span class="guide-num">1</span><span>準備好倉庫的<strong>不良品明細 Excel 檔</strong>（欄位：項次、供應商代號、儲位、大分類、商品代號、品名、庫存數量）</span></div>
+              <div class="guide-step"><span class="guide-num">1</span><span>準備好倉庫的<strong>不良品明細 Excel 檔</strong></span></div>
               <div class="guide-step"><span class="guide-num">2</span><span>點擊右上角 <strong>「⬆ 匯入 Excel」</strong> 按鈕</span></div>
               <div class="guide-step"><span class="guide-num">3</span><span>載入後即可填寫<strong>商流回覆、不良原因、進度備註</strong></span></div>
               <div class="guide-step"><span class="guide-ok">✓</span><span>資料儲存於 <strong>Supabase 雲端</strong>，所有裝置即時同步</span></div>
@@ -541,65 +625,35 @@ async function sbFetch(method, path, body) {
     },
     body: body ? JSON.stringify(body) : undefined
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
+  if (!res.ok) { const err = await res.text(); throw new Error(err); }
   const text = await res.text();
   return text ? JSON.parse(text) : null;
 }
 
-// DB → 前端格式
 function dbToRecord(r) {
   return {
-    id: r.id,
-    sn: r.sn || 0,
-    sup: r.sup || '',
-    supplierName: r.supplier_name || '',
-    loc: r.loc || '',
-    cat: r.cat || '',
-    sku: r.sku || '',
-    name: r.name || '',
-    qty: r.qty || 0,
-    reply: r.reply || '',
-    reason: r.reason || '',
-    date: r.date || '',
-    returnDate: r.return_date || '',
-    note: r.note || '',
-    handler: r.handler || '',
-    updatedAt: r.updated_at || '',
-    key: (r.sku || '') + '_' + (r.loc || ''),
-    matchScore: 0,
-    matchFields: []
+    id:r.id, sn:r.sn||0, sup:r.sup||'', supplierName:r.supplier_name||'',
+    loc:r.loc||'', cat:r.cat||'', sku:r.sku||'', name:r.name||'',
+    qty:r.qty||0, reply:r.reply||'', reason:r.reason||'', date:r.date||'',
+    returnDate:r.return_date||'', note:r.note||'', handler:r.handler||'',
+    updatedAt:r.updated_at||'', key:(r.sku||'')+'_'+(r.loc||''),
+    matchScore:0, matchFields:[]
   };
 }
-
-// 前端格式 → DB
-function recordToDb(r, warehouse) {
+function recordToDb(r, wh) {
   return {
-    warehouse: warehouse,
-    sn: r.sn || 0,
-    sup: r.sup || '',
-    supplier_name: r.supplierName || '',
-    loc: r.loc || '',
-    cat: r.cat || '',
-    sku: r.sku || '',
-    name: r.name || '',
-    qty: r.qty || 0,
-    reply: r.reply || '',
-    reason: r.reason || '',
-    date: r.date || '',
-    return_date: r.returnDate || '',
-    note: r.note || '',
-    handler: r.handler || '',
-    updated_at: r.updatedAt || ''
+    warehouse:wh, sn:r.sn||0, sup:r.sup||'', supplier_name:r.supplierName||'',
+    loc:r.loc||'', cat:r.cat||'', sku:r.sku||'', name:r.name||'',
+    qty:r.qty||0, reply:r.reply||'', reason:r.reason||'', date:r.date||'',
+    return_date:r.returnDate||'', note:r.note||'', handler:r.handler||'',
+    updated_at:r.updatedAt||''
   };
 }
 
 // ══════════════════════════════════════
-// 供應商主檔對照表
+// 供應商主檔
 // ══════════════════════════════════════
-const SUPPLIER_MAP = {"173595":"(人名)典股","635529":"一杯起餐飲股份有限公司","1962":"一直購","401238":"三石","401832":"三石天合","717056":"三得利","190002":"上煬","2370":"大丞電通","1045":"大風文創","1162":"大輿","91":"大霹靂","423":"大霹靂","751":"大霹靂","629999":"山淬","630142":"山櫻","2373":"川承","775120":"中國系統","2155":"中華大雄","630715":"中裕","1565":"天下","704":"天地","784":"金光","633448":"天然家園國際股份有限公司","621919":"天驥國際有限公司","2921":"日日幸福","630883":"木火","2164":"世雅育樂","1605":"世鼎","1861":"仕實設計","780139":"仟豐","1877":"叩應","2874":"可倫國際","1623":"台象","2280":"台象股份有限公司","662187":"台灣大昌華嘉","219":"台灣司麥爾食品股份有限公司","2113":"台灣唐榮","2397":"台灣晟龍","2248":"台灣索尼","646000":"台灣茗品","1768":"台灣普泰","623410":"台灣蓓得","1724":"台灣寶樂","1865":"巧克力雲莊","622110":"巧連","492036":"巧禮","2363":"巨柏","1729":"弘志食品","1493":"本鄉電子","2270":"本鄉電子","2392":"永或世成","136053":"永紐","705":"永紘","766201":"永瑞隆","893110":"生展","2157":"田和豐","3009":"白羊創意股份有限公司","1835":"石更玩意","1288":"禾聯","1287":"禾聯碩","1859":"伊瑪格","166016":"光隆","871905":"全台","550":"全網","888057":"全網","888903":"全網-網卡","625607":"合晶","626938":"同展興業","2176":"好匠訪","1690":"宇創國際有限公司","624451":"安迪","630111":"旭昶香港","306074":"有品","1582":"米斯特","1975":"米寶","623502":"老牛皮","399052":"老協珍","628996":"艾可開發","1739":"西肯創意","1686":"伯寶行","757009":"吾現愛","1717":"妍寶","873":"志旭","1105":"志旭","324058":"豆之家","622165":"貝真有限公司","132020":"貝登堡","629128":"亞洲力瑟","1450":"亞灣","2224":"來宇","1884":"侑泰行","626532":"宜興","626341":"宜興","626686":"尚銳企業","817":"怡業","122054":"拌伴餐飲有限公司","625065":"旺城蔬果有限公司","629548":"旺皇","2299":"旺鼎","2973":"旺鼎","623021":"旺德","2276":"昇科","978028":"東森","2055":"東輝","1815":"果舍","864013":"法堤烘焙","1487":"波滋達","2231":"金百","629814":"金博家","623441":"金博家-月結","389017":"阜鴻","389031":"阜鴻","1512":"雨禾","1560":"青草地","2015":"俊欣行","626501":"冠瑞","626518":"冠瑞","622622":"冠豪企業","910":"勁永","272003":"勇信","272065":"勇信","839192":"品冠","632988":"品恆昇","2002":"哈德客國際","86042":"客集","2956":"宥智科技有限公司","420017":"帝亞吉歐","643353":"思品","124050":"恆隆行","100771":"星禾","1523":"星呈","2948":"洋承國際有限公司","632117":"皇鋒通訊","1245":"相信音樂","914055":"紅櫻花","1579":"美好事物","107833":"美藍雷","900":"英菲斯","1663":"英屬蓋曼","2389":"食娜客國際開發股份有限公司","549000":"唐氏症","2061":"家興盛","623359":"展旺","628033":"恩實","1279":"振賀","977":"浤菖","2222":"海帕斯","1530":"神腦","965":"訊想科技","1208":"財團法人-技專","1092":"財團法人技專校院入學測驗中心基金會","632582":"財團法人看見．齊柏林基金會","1960":"財團法人-電腦技能基金會","2217":"財團法人-電影","474717":"高佳林","1588":"執雅","1850":"崎昌","598":"崗華","1752":"康生健康科技股份有限公司","624543":"康奈德","624420":"康軒","658126":"悠遊卡","2105":"翊棨","1528":"莫里斯","2230":"野獸國","499006":"凱羿實業股份有限公司","629944":"凱特","2294":"創穎科技","60286":"喜威","329138":"喜寶國際有限公司","329008":"喜寶國際有限公司","329107":"喜寶國際有限公司","329091":"喜寶國際有限公司","1704":"富弘家電","1705":"富弘家電股份有限公司","630647":"富甲酷客","621452":"富州","2273":"富佳泰國際有限公司","25023":"富商國際股份有限公司","25382":"富商國際股份有限公司","1936":"富琳","2345":"富達康","1840":"富漛","1647":"富懋","624406":"尊瀧","3000":"崴昇科技有限公司","2911":"提斯克","923561":"揚祈","1223":"普威爾","285528":"晶鑽","1987":"渲美科技","1988":"渲美科技","103022":"湛盧","2403":"琺鈉","377045":"翔王","626549":"華夏","2381":"華祐","1808":"萊翊","1468":"進泓","1443":"鈞嵐企業有限公司","773":"開拓","1207":"開拓","1677":"開拓","1679":"開拓","1620":"雅迪","624796":"集祥瑞","162052":"集福客","1888":"黃粒紅","256117":"黑橋牌-月結","2144":"匯通商行有限公司","629371":"奧斯卡寵物股份有限公司","1887":"愛上大數據","629951":"愛西迪","799133":"愛味香","2304":"新場景","1628":"楚崴","1498":"歆宇科技","1364":"瑋琳有限公司","626884":"瑞士維氏","626556":"瑞迪","627467":"瑞琪寵物精品股份有限公司","628972":"督洋生技","877":"群曜","974":"群曜","3040":"群曜","1640":"義大精密","629685":"萬國","313102":"裕利股份有限公司","623250":"鼎力支瓷","2296":"榮盈","1574":"漢麟貿易","2898":"碩穎","2327":"精鼎智能","2011":"維維樂","1734":"臺龍電子股份有限公司","1854":"臺灣普泰","1141":"蓋亞","1401":"銀泰佶","783244":"鳳凰城","629692":"齊祥","414470":"廟算","1905":"廣喆","882":"廣億實業有限公司","2165":"廣穎科技","2332":"廣穎科技","2289":"德奧","624338":"樂金生活健康","628163":"澄果","629180":"澄果","2884":"緯和","2167":"震旦行","913":"勳佑","2892":"勳佑","2019":"勳風","632278":"曉創意","2350":"樺新","2356":"橋信-月結","2014":"橘點子","629357":"親子堡","1410":"霖威","1007":"環球","10052":"聯柏","860":"聯強","635062":"韓樂網","2412":"韓麗","626983":"鴻名","621551":"鴻基泰","202004":"薩摩亞","1570":"雙緯","85001":"馥格","2942":"魏佳有限公司","2930":"麗嬰","3082":"麗嬰","2086":"寶興","1930":"寶聯通綠能科技","623625":"灣盛","339012":"鑽墘","635116":"易廷企業有限公司","3014":"研達國際股份有限公司","1633":"獅子心股份有限公司","3002":"潤益國際有限公司","627702":"育富國際有限公司","622097":"育富國際有限公司","633110":"饗通有限公司","630852":"光湶有限公司","2359":"保羅尼克有限公司","2201":"津承國際貿易有限公司","1349":"先創國際股份有限公司","3030":"志遠科技股份有限公司","752134":"網路家庭國際資訊股份有限公司","635024":"詹醬有限公司","3110":"日新不銹鋼工業股份有限公司","3102":"政緯科技股份有限公司","3055":"高佳林實業股份有限公司","2034":"康文國際有限公司","3053":"勝田企業有限公司","621780":"華興新創市場實業有限公司","630364":"匯發智能科技股份有限公司","2992":"鑽鎰實業有限公司","2983":"吉禾創意有限公司","3099":"后花園數位影像製作有限公司","2186":"沅豐食品有限公司","3051":"仁舟社會企業股份有限公司","3111":"日新不銹鋼工業股份有限公司","2970":"林熙國際有限公司","3225":"飛躍文創股份有限公司","2202":"傑仕登股份有限公司","2880":"傑仕登股份有限公司","2394":"溢恩有限公司","636744":"寵愛有家股份有限公司","3222":"藝鑫旺有限公司","637389":"岱卡提夫有限公司","2985":"科序有限公司","1871":"元圓寶國際有限公司","623724":"日亞特選名物股份有限公司","621612":"泰泉食品股份有限公司","627443":"國泰冷凍食品有限公司","636430":"陪心國際有限公司","3109":"三穩國際股份有限公司","2112":"宏彬國際有限公司","637440":"奇思企業有限公司","86066":"客集股份有限公司","950":"財團法人中華民國電腦技能基金會","636270":"健康力股份有限公司","625386":"裕璽國際貿易有限公司","635208":"發祥國際實業有限公司","951016":"一卡通票證股份有限公司","2919":"法羅整合行銷有限公司","3269":"詮勝國際股份有限公司","3091":"香港商美穗國際有限公司台灣分公司","3302":"聲寶股份有限公司","3379":"育昌文具商行有限公司","3377":"瑪琍歐玩具股份有限公司","637488":"赫邁運通有限公司","601649":"一之鄉股份有限公司","3313":"大師兄國際餐飲行銷有限公司","630609":"合鋒整合行銷有限公司","633462":"品臻國際行銷有限公司","59033":"香港阿一鮑魚股份有限公司","3230":"澄志行銷有限公司","3073":"瀚軒興業有限公司","2941":"西伊歐國際開發股份有限公司","2265":"華唯國際數位行銷有限公司","637204":"坡樂比有限公司","3348":"華麗熊行銷有限公司","2925":"左邊口袋工作室","633301":"華瑀有限公司","2195":"銳祺寶企業有限公司","3341":"浩軒股份有限公司","3372":"躍杰股份有限公司","771050":"元亨股份有限公司","2418":"相信音樂國際股份有限公司","3434":"鑫冠宇有限公司","637099":"萬國通路股份有限公司","3097":"惠中科技有限公司","1773":"大炳國際股份有限公司","3416":"友澄實業有限公司","114077":"龍運行銷股份有限公司","3034":"擎天網路科技有限公司","3427":"詠欣文有限公司","3410":"釉縻生活有限公司","636775":"饗通有限公司","2054":"東輝生物科技有限公司","1793":"鮮綠生活股份有限公司","2385":"元家企業股份有限公司","2264":"華唯國際數位行銷有限公司","1804":"饌前實業股份有限公司","109488":"台灣菸酒股份有限公司桃新營業所","1583":"百泑企業有限公司","2918":"頤士達國際有限公司","3471":"大芽電子禮品有限公司","639903":"敦景企業股份有限公司","86875":"客集股份有限公司","549":"長榮桂冠葡萄酒坊股份有限公司","2963":"美璟文化有限公司","642602":"花見行銷有限公司","643803":"賀木堂股份有限公司","253385":"東順興貿易股份有限公司","871707":"全台物流股份有限公司","4170":"島宇食品有限公司","658133":"悠遊卡股份有限公司","114473":"龍運行銷股份有限公司","702290":"士覺有限公司","257042":"台灣麒麟啤酒股份有限公司","3920":"星坊酒業股份有限公司","373098":"龍昇釀造股份有限公司","9588":"銳祺寶企業有限公司","4094":"威佐貿易有限公司","642640":"一加一國際開發股份有限公司","3667":"拓界國際","122597":"拌伴餐飲","122078":"拌伴餐飲","122979":"拌伴餐飲","25085":"富商國際股份有限公司","25771":"富商","636201":"品恆昇","639620":"品恆昇","635611":"品恆昇","643094":"品恆昇","893622":"生展生鮮","4024":"生展生鮮","543057":"玉美生技","3440":"睿盈國際","3237":"川承","640668":"点點數設","124579":"恆隆行","144009":"駿伸","144351":"駿伸","198440":"順天本草","869018":"韓華","621131":"大江生活","939023":"佶特國際","636935":"好侶","638412":"明基生活","638610":"明基生活","640507":"五洲生醫","642138":"河洛","644066":"自力耕生","644196":"加拿大野性魅力","936024":"東旺利","2383":"葦慶興業","3406":"統欣","3407":"統欣","3733":"森宏生技","66086":"亞洲力瑟","96063":"百惠","638092":"蜜田創新","638665":"蜜田創新","638863":"蜜田創新","1756":"宇晨","1757":"宇晨","4041":"壹萊特","319148":"新竹物流","642886":"台灣漢高","622776":"皇贊","631169":"皇贊","641456":"台灣農創","891008":"船井生醫","2909":"全球灣流","644523":"粉紅行銷","644714":"奇煒","73060":"台灣雀巢","893189":"生展生物科技","893387":"生展生物科技","893141":"生展生物科技","622011":"騰勢","3364":"法柏藍","3690":"法柏藍","638467":"欣創新","624857":"愛上大數據","643490":"天廚","613017":"聯馥","17855":"橘平實業","17367":"橘平實業","644141":"飛輪寵物","641463":"科懋","641180":"蒔時苑","2959":"優盛國際","633721":"貝真","782579":"中國系統","775182":"中國系統","642633":"津達","636713":"駿妡","637730":"量華","639859":"量華","642473":"量華","642596":"量華","645267":"量華","638955":"儲廣","638832":"儲廣","638184":"儲廣","691239":"合貿","2184":"合貿","691871":"合貿","691390":"合貿","519":"聯夏","114138":"龍運行銷/豆之家","646925":"正隆","642930":"正隆","892216":"合澤","923073":"全軒","646246":"台寧","146005":"格力高","1762":"紫陽實業","4056":"岳佳","4053":"蒸汽火車","646451":"德會創控","3840":"寰羽創意","3856":"獅王家品","640170":"詮勝","640705":"多富","57143":"佳格食品","642282":"天然家園","3515":"凱仲實業","3514":"凱仲實業","640200":"榮記洋行","640217":"榮記洋行","640224":"榮記洋行","3293":"雅譽生醫","623557":"金鵬棉織","839000":"品冠","147534":"形意風","4122":"銅遠","1082":"悅鈞","3810":"御妍堂","4050":"錸昂","3553":"珂珂朵爾","3284":"廣源良","638122":"傑創","4125":"達特世","4197":"緯和","3080":"多必優","641807":"東森寵物雲","460008":"鈦騰","38005":"太古","298043":"鮮一杯","645229":"順天堂","3079":"世剛","629050":"岢利亞","46136":"芙彤園","46075":"芙彤園","641579":"美力香","3770":"世堃","1866":"合益食品","1684":"合益食品","647386":"英雅美材","744010":"寶捷","1571":"昌達","1572":"昌達","3989":"昌達","624697":"昌達","624703":"昌達","624710":"昌達","646536":"昌達","4017":"棠洋","3876":"冠億食品","4091":"正麒股份有限公司","643254":"萬鑫","3778":"龍陳","3260":"寶鴻企業有限公司","639637":"國芝生物科技股份有限公司","646109":"精彩體育行銷有限公司","646390":"沛服","647157":"欣葉","3788":"荷彌","339906":"鑽乾","21113":"成偉","642640":"一加一","645281":"淨毒五郎","3999":"欣美勝","197072":"宏亞食品股份有限公司","645694":"日丞國際企業有限公司","439530":"永豐餘","3683":"艾賜魔袋","647447":"玉津","310790":"奇美","632292":"家庭雲端","871561":"全台物流股份有限公司","000677":"全家便利商店股份有限公司","162076":"集福客食品開發有限公司","634618":"偉紘企業社","639880":"偉紘企業社"};
+const SUPPLIER_MAP = {"173595":"(人名)典股","635529":"一杯起餐飲股份有限公司","1962":"一直購","401238":"三石","401832":"三石天合","717056":"三得利","190002":"上煬","2370":"大丞電通","1045":"大風文創","1162":"大輿","91":"大霹靂","423":"大霹靂","751":"大霹靂","629999":"山淬","630142":"山櫻","2373":"川承","775120":"中國系統","2155":"中華大雄","630715":"中裕","1565":"天下","704":"天地","784":"金光","633448":"天然家園國際股份有限公司","621919":"天驥國際有限公司","2921":"日日幸福","630883":"木火","2164":"世雅育樂","1605":"世鼎","1861":"仕實設計","780139":"仟豐","1877":"叩應","2874":"可倫國際","1623":"台象","2280":"台象股份有限公司","662187":"台灣大昌華嘉","219":"台灣司麥爾食品股份有限公司","2113":"台灣唐榮","2397":"台灣晟龍","2248":"台灣索尼","646000":"台灣茗品","1768":"台灣普泰","623410":"台灣蓓得","1724":"台灣寶樂","1865":"巧克力雲莊","622110":"巧連","492036":"巧禮","2363":"巨柏","1729":"弘志食品","1493":"本鄉電子","2270":"本鄉電子","2392":"永或世成","136053":"永紐","705":"永紘","766201":"永瑞隆","893110":"生展","2157":"田和豐","3009":"白羊創意股份有限公司","1835":"石更玩意","1288":"禾聯","1287":"禾聯碩","1859":"伊瑪格","166016":"光隆","871905":"全台","550":"全網","888057":"全網","888903":"全網-網卡","625607":"合晶","626938":"同展興業","2176":"好匠訪","1690":"宇創國際有限公司","624451":"安迪","630111":"旭昶香港","306074":"有品","1582":"米斯特","1975":"米寶","623502":"老牛皮","399052":"老協珍","628996":"艾可開發","1739":"西肯創意","1686":"伯寶行","757009":"吾現愛","1717":"妍寶","873":"志旭","1105":"志旭","324058":"豆之家","622165":"貝真有限公司","132020":"貝登堡","629128":"亞洲力瑟","1450":"亞灣","2224":"來宇","1884":"侑泰行","626532":"宜興","626341":"宜興","626686":"尚銳企業","817":"怡業","122054":"拌伴餐飲有限公司","625065":"旺城蔬果有限公司","629548":"旺皇","2299":"旺鼎","2973":"旺鼎","623021":"旺德","2276":"昇科","978028":"東森","2055":"東輝","1815":"果舍","864013":"法堤烘焙","1487":"波滋達","2231":"金百","629814":"金博家","623441":"金博家-月結","389017":"阜鴻","389031":"阜鴻","1512":"雨禾","1560":"青草地","2015":"俊欣行","626501":"冠瑞","626518":"冠瑞","622622":"冠豪企業","910":"勁永","272003":"勇信","272065":"勇信","839192":"品冠","632988":"品恆昇","2002":"哈德客國際","86042":"客集","2956":"宥智科技有限公司","420017":"帝亞吉歐","643353":"思品","124050":"恆隆行","100771":"星禾","1523":"星呈","2948":"洋承國際有限公司","632117":"皇鋒通訊","1245":"相信音樂","914055":"紅櫻花","1579":"美好事物","107833":"美藍雷","900":"英菲斯","1663":"英屬蓋曼","2389":"食娜客國際開發股份有限公司","549000":"唐氏症","2061":"家興盛","623359":"展旺","628033":"恩實","1279":"振賀","977":"浤菖","2222":"海帕斯","1530":"神腦","965":"訊想科技","1208":"財團法人-技專","1092":"財團法人技專校院入學測驗中心基金會","632582":"財團法人看見．齊柏林基金會","1960":"財團法人-電腦技能基金會","2217":"財團法人-電影","474717":"高佳林","1588":"執雅","1850":"崎昌","598":"崗華","1752":"康生健康科技股份有限公司","624543":"康奈德","624420":"康軒","658126":"悠遊卡","2105":"翊棨","1528":"莫里斯","2230":"野獸國","499006":"凱羿實業股份有限公司","629944":"凱特","2294":"創穎科技","60286":"喜威","329138":"喜寶國際有限公司","329008":"喜寶國際有限公司","329107":"喜寶國際有限公司","329091":"喜寶國際有限公司","1704":"富弘家電","1705":"富弘家電股份有限公司","630647":"富甲酷客","621452":"富州","2273":"富佳泰國際有限公司","25023":"富商國際股份有限公司","25382":"富商國際股份有限公司","1936":"富琳","2345":"富達康","1840":"富漛","1647":"富懋","624406":"尊瀧","3000":"崴昇科技有限公司","2911":"提斯克","923561":"揚祈","1223":"普威爾","285528":"晶鑽","1987":"渲美科技","1988":"渲美科技","103022":"湛盧","2403":"琺鈉","377045":"翔王","626549":"華夏","2381":"華祐","1808":"萊翊","1468":"進泓","1443":"鈞嵐企業有限公司","773":"開拓","1207":"開拓","1677":"開拓","1679":"開拓","1620":"雅迪","624796":"集祥瑞","162052":"集福客","1888":"黃粒紅","256117":"黑橋牌-月結","2144":"匯通商行有限公司","629371":"奧斯卡寵物股份有限公司","1887":"愛上大數據","629951":"愛西迪","799133":"愛味香","2304":"新場景","1628":"楚崴","1498":"歆宇科技","1364":"瑋琳有限公司","626884":"瑞士維氏","626556":"瑞迪","627467":"瑞琪寵物精品股份有限公司","628972":"督洋生技","877":"群曜","974":"群曜","3040":"群曜","1640":"義大精密","629685":"萬國","313102":"裕利股份有限公司","623250":"鼎力支瓷","2296":"榮盈","1574":"漢麟貿易","2898":"碩穎","2327":"精鼎智能","2011":"維維樂","1734":"臺龍電子股份有限公司","1854":"臺灣普泰","1141":"蓋亞","1401":"銀泰佶","783244":"鳳凰城","629692":"齊祥","414470":"廟算","1905":"廣喆","882":"廣億實業有限公司","2165":"廣穎科技","2332":"廣穎科技","2289":"德奧","624338":"樂金生活健康","628163":"澄果","629180":"澄果","2884":"緯和","2167":"震旦行","913":"勳佑","2892":"勳佑","2019":"勳風","632278":"曉創意","2350":"樺新","2356":"橋信-月結","2014":"橘點子","629357":"親子堡","1410":"霖威","1007":"環球","10052":"聯柏","860":"聯強","635062":"韓樂網","2412":"韓麗","626983":"鴻名","621551":"鴻基泰","202004":"薩摩亞","1570":"雙緯","85001":"馥格","2942":"魏佳有限公司","2930":"麗嬰","3082":"麗嬰","2086":"寶興","1930":"寶聯通綠能科技","623625":"灣盛","339012":"鑽墘","635116":"易廷企業有限公司","3014":"研達國際股份有限公司","1633":"獅子心股份有限公司","3002":"潤益國際有限公司","627702":"育富國際有限公司","622097":"育富國際有限公司","633110":"饗通有限公司","630852":"光湶有限公司","2359":"保羅尼克有限公司","2201":"津承國際貿易有限公司","1349":"先創國際股份有限公司","3030":"志遠科技股份有限公司","752134":"網路家庭國際資訊股份有限公司","635024":"詹醬有限公司","3110":"日新不銹鋼工業股份有限公司","3102":"政緯科技股份有限公司","3055":"高佳林實業股份有限公司","2034":"康文國際有限公司","3053":"勝田企業有限公司","621780":"華興新創市場實業有限公司","630364":"匯發智能科技股份有限公司","2992":"鑽鎰實業有限公司","2983":"吉禾創意有限公司","3099":"后花園數位影像製作有限公司","2186":"沅豐食品有限公司","3051":"仁舟社會企業股份有限公司","3111":"日新不銹鋼工業股份有限公司","2970":"林熙國際有限公司","3225":"飛躍文創股份有限公司","2202":"傑仕登股份有限公司","2880":"傑仕登股份有限公司","2394":"溢恩有限公司","636744":"寵愛有家股份有限公司","3222":"藝鑫旺有限公司","637389":"岱卡提夫有限公司","2985":"科序有限公司","1871":"元圓寶國際有限公司","623724":"日亞特選名物股份有限公司","621612":"泰泉食品股份有限公司","627443":"國泰冷凍食品有限公司","636430":"陪心國際有限公司","3109":"三穩國際股份有限公司","2112":"宏彬國際有限公司","637440":"奇思企業有限公司","86066":"客集股份有限公司","950":"財團法人中華民國電腦技能基金會","636270":"健康力股份有限公司","625386":"裕璽國際貿易有限公司","635208":"發祥國際實業有限公司","951016":"一卡通票證股份有限公司","2919":"法羅整合行銷有限公司","3269":"詮勝國際股份有限公司","3091":"香港商美穗國際有限公司台灣分公司","3302":"聲寶股份有限公司","3379":"育昌文具商行有限公司","3377":"瑪琍歐玩具股份有限公司","637488":"赫邁運通有限公司","601649":"一之鄉股份有限公司","3313":"大師兄國際餐飲行銷有限公司","630609":"合鋒整合行銷有限公司","633462":"品臻國際行銷有限公司","59033":"香港阿一鮑魚股份有限公司","3230":"澄志行銷有限公司","3073":"瀚軒興業有限公司","2941":"西伊歐國際開發股份有限公司","2265":"華唯國際數位行銷有限公司","637204":"坡樂比有限公司","3348":"華麗熊行銷有限公司","2925":"左邊口袋工作室","633301":"華瑀有限公司","2195":"銳祺寶企業有限公司","3341":"浩軒股份有限公司","3372":"躍杰股份有限公司","771050":"元亨股份有限公司","2418":"相信音樂國際股份有限公司","3434":"鑫冠宇有限公司","637099":"萬國通路股份有限公司","3097":"惠中科技有限公司","1773":"大炳國際股份有限公司","3416":"友澄實業有限公司","114077":"龍運行銷股份有限公司","3034":"擎天網路科技有限公司","3427":"詠欣文有限公司","3410":"釉縻生活有限公司","636775":"饗通有限公司","2054":"東輝生物科技有限公司","1793":"鮮綠生活股份有限公司","2385":"元家企業股份有限公司","2264":"華唯國際數位行銷有限公司","1804":"饌前實業股份有限公司","109488":"台灣菸酒股份有限公司桃新營業所","1583":"百泑企業有限公司","2918":"頤士達國際有限公司","3471":"大芽電子禮品有限公司","639903":"敦景企業股份有限公司","86875":"客集股份有限公司","549":"長榮桂冠葡萄酒坊股份有限公司","2963":"美璟文化有限公司","642602":"花見行銷有限公司","643803":"賀木堂股份有限公司","253385":"東順興貿易股份有限公司","871707":"全台物流股份有限公司","4170":"島宇食品有限公司","658133":"悠遊卡股份有限公司","114473":"龍運行銷股份有限公司","702290":"士覺有限公司","257042":"台灣麒麟啤酒股份有限公司","3920":"星坊酒業股份有限公司","373098":"龍昇釀造股份有限公司","9588":"銳祺寶企業有限公司","4094":"威佐貿易有限公司","642640":"一加一國際開發股份有限公司","3667":"拓界國際","122597":"拌伴餐飲","122078":"拌伴餐飲","122979":"拌伴餐飲","25085":"富商國際股份有限公司","25771":"富商","636201":"品恆昇","639620":"品恆昇","635611":"品恆昇","643094":"品恆昇","893622":"生展生鮮","4024":"生展生鮮","543057":"玉美生技","3440":"睿盈國際","3237":"川承","640668":"点點數設","124579":"恆隆行","144009":"駿伸","144351":"駿伸","198440":"順天本草","869018":"韓華","621131":"大江生活","939023":"佶特國際","636935":"好侶","638412":"明基生活","638610":"明基生活","640507":"五洲生醫","642138":"河洛","644066":"自力耕生","644196":"加拿大野性魅力","936024":"東旺利","2383":"葦慶興業","3406":"統欣","3407":"統欣","3733":"森宏生技","66086":"亞洲力瑟","96063":"百惠","638092":"蜜田創新","638665":"蜜田創新","638863":"蜜田創新","1756":"宇晨","1757":"宇晨","4041":"壹萊特","319148":"新竹物流","642886":"台灣漢高","622776":"皇贊","631169":"皇贊","641456":"台灣農創","891008":"船井生醫","2909":"全球灣流","644523":"粉紅行銷","644714":"奇煒","73060":"台灣雀巢","893189":"生展生物科技","893387":"生展生物科技","893141":"生展生物科技","622011":"騰勢","3364":"法柏藍","3690":"法柏藍","638467":"欣創新","624857":"愛上大數據","643490":"天廚","613017":"聯馥","17855":"橘平實業","17367":"橘平實業","644141":"飛輪寵物","641463":"科懋","641180":"蒔時苑","2959":"優盛國際","633721":"貝真","782579":"中國系統","775182":"中國系統","642633":"津達","636713":"駿妡","637730":"量華","639859":"量華","642473":"量華","642596":"量華","645267":"量華","638955":"儲廣","638832":"儲廣","638184":"儲廣","691239":"合貿","2184":"合貿","691871":"合貿","691390":"合貿","519":"聯夏","114138":"龍運行銷/豆之家","646925":"正隆","642930":"正隆","892216":"合澤","923073":"全軒","646246":"台寧","146005":"格力高","1762":"紫陽實業","4056":"岳佳","4053":"蒸汽火車","646451":"德會創控","3840":"寰羽創意","3856":"獅王家品","640170":"詮勝","640705":"多富","57143":"佳格食品","642282":"天然家園","3515":"凱仲實業","3514":"凱仲實業","640200":"榮記洋行","640217":"榮記洋行","640224":"榮記洋行","3293":"雅譽生醫","623557":"金鵬棉織","839000":"品冠","147534":"形意風","4122":"銅遠","1082":"悅鈞","3810":"御妍堂","4050":"錸昂","3553":"珂珂朵爾","3284":"廣源良","638122":"傑創","4125":"達特世","4197":"緯和","3080":"多必優","641807":"東森寵物雲","460008":"鈦騰","38005":"太古","298043":"鮮一杯","645229":"順天堂","3079":"世剛","629050":"岢利亞","46136":"芙彤園","46075":"芙彤園","641579":"美力香","3770":"世堃","1866":"合益食品","1684":"合益食品","647386":"英雅美材","744010":"寶捷","1571":"昌達","1572":"昌達","3989":"昌達","624697":"昌達","624703":"昌達","624710":"昌達","646536":"昌達","4017":"棠洋","3876":"冠億食品","4091":"正麒股份有限公司","643254":"萬鑫","3778":"龍陳","3260":"寶鴻企業有限公司","639637":"國芝生物科技股份有限公司","646109":"精彩體育行銷有限公司","646390":"沛服","647157":"欣葉","3788":"荷彌","339906":"鑽乾","21113":"成偉","645281":"淨毒五郎","3999":"欣美勝","197072":"宏亞食品股份有限公司","645694":"日丞國際企業有限公司","439530":"永豐餘","3683":"艾賜魔袋","647447":"玉津","310790":"奇美","632292":"家庭雲端","871561":"全台物流股份有限公司","000677":"全家便利商店股份有限公司","162076":"集福客食品開發有限公司","634618":"偉紘企業社","639880":"偉紘企業社"};
 
 function lookupSupplierName(sup) {
   return SUPPLIER_MAP[String(sup).trim()] || '';
@@ -618,6 +672,36 @@ const ACCOUNTS = {
 let records=[], editIdx=null, currentUser=null, notifShown=false;
 let selectedIdx=new Set();
 
+// ── 密碼管理 ──
+const PW_KEY='defect_pw';
+function getPw(uid){try{const s=JSON.parse(localStorage.getItem(PW_KEY)||'{}');return s[uid]||ACCOUNTS[uid].password;}catch(e){return ACCOUNTS[uid].password;}}
+function savePw(uid,pw){try{const s=JSON.parse(localStorage.getItem(PW_KEY)||'{}');s[uid]=pw;localStorage.setItem(PW_KEY,JSON.stringify(s));}catch(e){}}
+
+function openChangePw(){
+  document.getElementById('cp-user').value=document.getElementById('login-user').value||'';
+  document.getElementById('cp-old').value='';
+  document.getElementById('cp-new').value='';
+  document.getElementById('cp-confirm').value='';
+  document.getElementById('cp-error').textContent='';
+  document.getElementById('change-pw-modal').classList.add('open');
+}
+function closeChangePw(){document.getElementById('change-pw-modal').classList.remove('open');}
+function doChangePw(){
+  const uid=document.getElementById('cp-user').value.trim().toUpperCase();
+  const oldPw=document.getElementById('cp-old').value;
+  const newPw=document.getElementById('cp-new').value;
+  const confirmPw=document.getElementById('cp-confirm').value;
+  const errEl=document.getElementById('cp-error');
+  if(!uid||!oldPw||!newPw||!confirmPw){errEl.textContent='請填寫所有欄位';return;}
+  if(!ACCOUNTS[uid]){errEl.textContent='帳號不存在';return;}
+  if(getPw(uid)!==oldPw){errEl.textContent='舊密碼錯誤';return;}
+  if(newPw.length<4){errEl.textContent='新密碼至少需要 4 碼';return;}
+  if(newPw!==confirmPw){errEl.textContent='兩次輸入的新密碼不一致';return;}
+  savePw(uid,newPw);
+  errEl.style.color='var(--green)';errEl.textContent='✓ 密碼修改成功！';
+  setTimeout(function(){closeChangePw();errEl.style.color='';},1500);
+}
+
 // ── Helpers ──
 function showLoading(msg){document.getElementById('loading-text').textContent=msg||'處理中...';document.getElementById('loading-overlay').classList.add('show');}
 function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
@@ -630,53 +714,6 @@ function daysUntil(ds){if(!ds)return null;const d=new Date(ds);if(isNaN(d))retur
 function overdueLevel(r){const d=daysSince(r.date);if(d===null)return 0;if(d>14)return 2;if(d>7)return 1;return 0;}
 function isOverdue(r){return overdueLevel(r)>0;}
 
-// 密碼儲存（支援修改）
-const PW_STORAGE_KEY = 'defect_tracker_passwords';
-function loadPasswords() {
-  try {
-    const saved = localStorage.getItem(PW_STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
-  } catch(e) {}
-  return {};
-}
-function savePasswords(pw) {
-  try { localStorage.setItem(PW_STORAGE_KEY, JSON.stringify(pw)); } catch(e) {}
-}
-function getPassword(uid) {
-  const saved = loadPasswords();
-  return saved[uid] || ACCOUNTS[uid].password;
-}
-
-function openChangePw() {
-  document.getElementById('cp-user').value = document.getElementById('login-user').value || '';
-  document.getElementById('cp-old').value = '';
-  document.getElementById('cp-new').value = '';
-  document.getElementById('cp-confirm').value = '';
-  document.getElementById('cp-error').textContent = '';
-  document.getElementById('change-pw-modal').classList.add('open');
-}
-function closeChangePw() {
-  document.getElementById('change-pw-modal').classList.remove('open');
-}
-function doChangePw() {
-  const uid = document.getElementById('cp-user').value.trim().toUpperCase();
-  const oldPw = document.getElementById('cp-old').value;
-  const newPw = document.getElementById('cp-new').value;
-  const confirmPw = document.getElementById('cp-confirm').value;
-  const errEl = document.getElementById('cp-error');
-  if (!uid || !oldPw || !newPw || !confirmPw) { errEl.textContent = '請填寫所有欄位'; return; }
-  if (!ACCOUNTS[uid]) { errEl.textContent = '帳號不存在'; return; }
-  if (getPassword(uid) !== oldPw) { errEl.textContent = '舊密碼錯誤'; return; }
-  if (newPw.length < 4) { errEl.textContent = '新密碼至少需要 4 碼'; return; }
-  if (newPw !== confirmPw) { errEl.textContent = '兩次輸入的新密碼不一致'; return; }
-  const saved = loadPasswords();
-  saved[uid] = newPw;
-  savePasswords(saved);
-  errEl.style.color = 'var(--green)';
-  errEl.textContent = '✓ 密碼修改成功！';
-  setTimeout(function() { closeChangePw(); errEl.style.color = ''; }, 1500);
-}
-
 // ── 登入 ──
 function doLogin(){
   const uid=document.getElementById('login-user').value.trim().toUpperCase();
@@ -684,22 +721,16 @@ function doLogin(){
   const errEl=document.getElementById('login-error');
   if(!uid||!pw){errEl.textContent='請輸入帳號與密碼';return;}
   const acc=ACCOUNTS[uid];
-  if(!acc||getPassword(uid)!==pw){errEl.textContent='帳號或密碼錯誤';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();return;}
-  currentUser={id:uid,...acc};
-  errEl.textContent='';
+  if(!acc||getPw(uid)!==pw){errEl.textContent='帳號或密碼錯誤';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();return;}
+  currentUser={id:uid,...acc};errEl.textContent='';
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('user-badge').style.display='flex';
   document.getElementById('user-dot').style.background=acc.color;
   document.getElementById('user-display').textContent=acc.name;
-  if(acc.whLabel){
-    const wb=document.getElementById('wh-badge');
-    wb.textContent=acc.whLabel;wb.style.display='';
-    wb.style.background=acc.color+'22';wb.style.color=acc.color;
-  }
+  if(acc.whLabel){const wb=document.getElementById('wh-badge');wb.textContent=acc.whLabel;wb.style.display='';wb.style.background=acc.color+'22';wb.style.color=acc.color;}
   if(acc.role==='admin'){showAdminView();}
   else{document.getElementById('header-actions').style.display='flex';loadData();}
 }
-
 function doLogout(){
   currentUser=null;records=[];
   document.getElementById('login-screen').classList.remove('hidden');
@@ -732,25 +763,19 @@ function showEmptyGuide(){
   document.getElementById('guide-box').style.display='';
 }
 function showTableIfHasData(){
-  if(records.length>0){
-    document.getElementById('empty-state').style.display='none';
-    document.getElementById('main-table').style.display='';
-  } else {
-    document.getElementById('empty-state').style.display='';
-    document.getElementById('main-table').style.display='none';
-    document.getElementById('guide-box').style.display='none';
-  }
+  if(records.length>0){document.getElementById('empty-state').style.display='none';document.getElementById('main-table').style.display='';}
+  else{document.getElementById('empty-state').style.display='';document.getElementById('main-table').style.display='none';document.getElementById('guide-box').style.display='none';}
 }
 
-// ── 讀取資料（Supabase）──
+// ── 資料（Supabase）──
 async function loadData(){
   if(!currentUser||currentUser.role==='admin')return;
   setSyncStatus('loading','⏳ 讀取中...');
   document.getElementById('btn-refresh').disabled=true;
   showLoading('讀取資料中...');
   try{
-    const data = await sbFetch('GET', TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=1000', null);
-    records = (data||[]).map(dbToRecord);
+    const data=await sbFetch('GET',TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=1000',null);
+    records=(data||[]).map(dbToRecord);
     setSyncStatus('ok','✓ 已連線');
     showToast('✓ 已載入 '+records.length+' 筆');
     renderTable();updateStats();
@@ -758,81 +783,55 @@ async function loadData(){
     if(records.length>0)setTimeout(showReturnDateNotif,800);
   }catch(e){
     setSyncStatus('err','✗ 連線失敗');
-    showToast('⚠ 無法連線 Supabase：'+e.message,5000);
-    records=[];
-    showEmptyGuide();
+    showToast('⚠ 無法連線：'+e.message,5000);
+    records=[];showEmptyGuide();
   }
-  hideLoading();
-  document.getElementById('btn-refresh').disabled=false;
+  hideLoading();document.getElementById('btn-refresh').disabled=false;
 }
 
-// ── 儲存單筆（upsert by id）──
 async function saveRecord(r){
-  const body = recordToDb(r, currentUser.whKey);
-  if(r.id){
-    await sbFetch('PATCH', TABLE+'?id=eq.'+r.id, body);
-  } else {
-    const res = await sbFetch('POST', TABLE, body);
-    if(res&&res[0])r.id=res[0].id;
-  }
+  const body=recordToDb(r,currentUser.whKey);
+  if(r.id){await sbFetch('PATCH',TABLE+'?id=eq.'+r.id,body);}
+  else{const res=await sbFetch('POST',TABLE,body);if(res&&res[0])r.id=res[0].id;}
 }
 
-// ── 批次寫入（匯入 Excel 後全部 upsert）──
 async function saveAllRecords(){
   setSyncStatus('loading','⏳ 同步中...');
   try{
-    // 先刪除該倉舊資料
-    await sbFetch('DELETE', TABLE+'?warehouse=eq.'+currentUser.whKey, null);
-    // 重新寫入
-    const bodies = records.map(function(r){return recordToDb(r,currentUser.whKey);});
-    // 分批 100 筆
-    for(let i=0;i<bodies.length;i+=100){
-      await sbFetch('POST', TABLE, bodies.slice(i,i+100));
-    }
-    // 重新讀取取得 id
-    const data = await sbFetch('GET', TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=1000', null);
-    records = (data||[]).map(dbToRecord);
-    setSyncStatus('ok','✓ 已同步');
-    showToast('✓ 已同步 '+records.length+' 筆至 Supabase');
-  }catch(e){
-    setSyncStatus('err','✗ 同步失敗');
-    showToast('⚠ 同步失敗：'+e.message,5000);
-  }
+    await sbFetch('DELETE',TABLE+'?warehouse=eq.'+currentUser.whKey,null);
+    const bodies=records.map(function(r){return recordToDb(r,currentUser.whKey);});
+    for(let i=0;i<bodies.length;i+=100){await sbFetch('POST',TABLE,bodies.slice(i,i+100));}
+    const data=await sbFetch('GET',TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=1000',null);
+    records=(data||[]).map(dbToRecord);
+    setSyncStatus('ok','✓ 已同步');showToast('✓ 已同步 '+records.length+' 筆至 Supabase');
+  }catch(e){setSyncStatus('err','✗ 同步失敗');showToast('⚠ 同步失敗：'+e.message,5000);}
 }
 
-// ── 清空資料 ──
+// ── 清空 ──
 function clearAllData(){
-  if(!currentUser||!currentUser.whLabel)return;
   const modal=document.getElementById('confirm-modal');
   const titleEl=document.getElementById('confirm-title');
   const msgEl=document.getElementById('confirm-msg');
   const cancelBtn=document.getElementById('confirm-cancel');
   const okBtn=document.getElementById('confirm-ok');
-  // 第一次確認
   titleEl.textContent='清空「'+currentUser.whLabel+'」資料';
   msgEl.textContent='確定要清空此倉所有資料嗎？此動作無法復原，建議先匯出備份。';
   okBtn.textContent='確定清空';
   cancelBtn.onclick=function(){modal.classList.remove('open');};
   okBtn.onclick=function(){
-    // 第二次確認
     titleEl.textContent='⚠️ 再次確認';
     msgEl.textContent='資料清空後將完全消失，確定繼續？';
     okBtn.textContent='是的，清空！';
     okBtn.onclick=async function(){
-      modal.classList.remove('open');
-      showLoading('清空中...');
+      modal.classList.remove('open');showLoading('清空中...');
       try{
         await sbFetch('DELETE',TABLE+'?warehouse=eq.'+currentUser.whKey,null);
-        records=[];
-        renderTable();updateStats();
-        showEmptyGuide();
-        setSyncStatus('ok','✓ 已同步');
-        showToast('✓ 已清空所有資料');
-      }catch(e){
-        showToast('⚠ 清空失敗：'+e.message,4000);
-      }
+        records=[];renderTable();updateStats();showEmptyGuide();
+        setSyncStatus('ok','✓ 已同步');showToast('✓ 已清空所有資料');
+      }catch(e){showToast('⚠ 清空失敗：'+e.message,4000);}
       hideLoading();
     };
+    modal.classList.add('open');
   };
   modal.classList.add('open');
 }
@@ -859,21 +858,19 @@ function handleFile(input){
         const k=sku+'_'+loc;if(!k||k==='_')continue;
         newMap[k]={sn:Number(row[ci.sn])||i,sup:String(row[ci.sup]||'').trim(),loc:loc,cat:String(row[ci.cat]||'').trim(),sku:sku,name:String(row[ci.name]||'').trim(),qty:row[ci.qty]!==''?Number(row[ci.qty]):0,reply:'',reason:'',date:'',returnDate:'',note:'',handler:'',updatedAt:'',supplierName:lookupSupplierName(String(row[ci.sup]||'').trim()),matchScore:0,matchFields:[]};
       }
-      // 合併舊資料
       const existMap={};
       records.forEach(function(r){const k=r.sku+'_'+r.loc;if(k)existMap[k]=r;});
       const merged=[];
       Object.entries(newMap).forEach(function(entry){
         const k=entry[0],nd=entry[1];
-        if(existMap[k]){merged.push(Object.assign({},existMap[k],{qty:nd.qty,sn:nd.sn,name:nd.name}));}
+        if(existMap[k]){merged.push(Object.assign({},existMap[k],{qty:nd.qty,sn:nd.sn,name:nd.name,supplierName:nd.supplierName||existMap[k].supplierName}));}
         else{merged.push(nd);}
       });
       records=merged.sort(function(a,b){return a.sn-b.sn;});
       showTableIfHasData();renderTable();updateStats();
       notifShown=false;
       if(records.length>0){showDashboard();setTimeout(showReturnDateNotif,600);}
-      await saveAllRecords();
-      renderTable();updateStats();
+      await saveAllRecords();renderTable();updateStats();
     }catch(err){alert('讀取失敗：'+err.message);}
     hideLoading();input.value='';
   };
@@ -888,7 +885,6 @@ function replyBadge(v){
   if(v==='不良換')return '<span class="badge badge-teal">不良換</span>';
   return '<span class="badge badge-gray">'+v+'</span>';
 }
-
 function renderTable(){
   const q=(document.getElementById('search').value||'').toLowerCase();
   const fR=document.getElementById('filter-reply').value;
@@ -913,8 +909,7 @@ function renderTable(){
     const dateHtml=r.date?(r.date+odPill):'—';
     let retHtml='—';
     if(r.returnDate){
-      const dt=daysUntil(r.returnDate);
-      let pill='';
+      const dt=daysUntil(r.returnDate);let pill='';
       if(dt<0)pill='<span class="return-date-over">已過期</span>';
       else if(dt===0)pill='<span class="return-date-today">📦 今日收退</span>';
       else if(dt<=2)pill='<span class="return-date-soon">D-'+dt+'</span>';
@@ -923,10 +918,8 @@ function renderTable(){
     const snHtml=r.supplierName?r.supplierName:'<span style="color:var(--text3)">—</span>';
     return '<tr class="'+odClass+'" onclick="handleRowClick(event,'+ri+')" style="cursor:pointer">'+
       '<td class="td-check"><input type="checkbox" class="row-check" data-idx="'+ri+'" onchange="onRowCheck(this)"></td>'+
-      '<td class="row-num">'+r.sn+'</td>'+
-      '<td class="mono">'+r.sup+'</td>'+
-      '<td style="font-size:12px">'+snHtml+'</td>'+
-      '<td class="mono">'+r.loc+'</td>'+
+      '<td class="row-num">'+r.sn+'</td><td class="mono">'+r.sup+'</td>'+
+      '<td style="font-size:12px">'+snHtml+'</td><td class="mono">'+r.loc+'</td>'+
       '<td>'+(r.cat?'<span class="badge badge-gray">'+r.cat+'</span>':'')+'</td>'+
       '<td class="mono">'+r.sku+'</td>'+
       '<td class="cell-clip" style="max-width:200px" title="'+r.name+'">'+r.name+'</td>'+
@@ -942,32 +935,22 @@ function renderTable(){
       '</tr>';
   }).join('');
 }
-
 function updateStats(){
   const tot=records.length,pend=records.filter(function(r){return !r.reply;}).length,ov=records.filter(function(r){return isOverdue(r);}).length;
   const tr=records.filter(function(r){return r.reply==='轉不良';}).length,ret=records.filter(function(r){return r.reply==='不良退';}).length,sw=records.filter(function(r){return r.reply==='不良換';}).length,mt=records.filter(function(r){return r.supplierName;}).length;
-  document.getElementById('st-total').textContent=tot;
-  document.getElementById('st-pending').textContent=pend;
-  document.getElementById('st-overdue').textContent=ov;
-  document.getElementById('st-trans').textContent=tr;
-  document.getElementById('st-ret').textContent=ret;
-  document.getElementById('st-swap').textContent=sw;
-  document.getElementById('st-matched').textContent=mt;
+  document.getElementById('st-total').textContent=tot;document.getElementById('st-pending').textContent=pend;document.getElementById('st-overdue').textContent=ov;
+  document.getElementById('st-trans').textContent=tr;document.getElementById('st-ret').textContent=ret;document.getElementById('st-swap').textContent=sw;document.getElementById('st-matched').textContent=mt;
   var sm={all:tot,pending:pend,overdue:ov,trans:tr,ret:ret,swap:sw,matched:mt};
   Object.keys(sm).forEach(function(k){var el=document.getElementById('sb-val-'+k);if(el)el.textContent=sm[k];});
   updateSupFilter();
 }
-
 function updateSupFilter(){
   const sel=document.getElementById('filter-sup');if(!sel)return;
   const cur=sel.value,m={};
   records.forEach(function(r){if(r.sup)m[r.sup]=r.supplierName||r.sup;});
   sel.innerHTML='<option value="">🏢 全部供應商</option>';
   Object.entries(m).sort(function(a,b){return a[0].localeCompare(b[0]);}).forEach(function(entry){
-    const o=document.createElement('option');
-    o.value=entry[0];o.textContent=entry[1]!==entry[0]?entry[0]+' '+entry[1]:entry[0];
-    if(entry[0]===cur)o.selected=true;
-    sel.appendChild(o);
+    const o=document.createElement('option');o.value=entry[0];o.textContent=entry[1]!==entry[0]?entry[0]+' '+entry[1]:entry[0];if(entry[0]===cur)o.selected=true;sel.appendChild(o);
   });
 }
 
@@ -985,8 +968,7 @@ function showReturnDateNotif(){
 function showOverdueNotif(){
   if(notifShown)return;
   const items=records.filter(function(r){return overdueLevel(r)>0&&!r.note;}).sort(function(a,b){return daysSince(b.date)-daysSince(a.date);});
-  if(!items.length)return;
-  notifShown=true;
+  if(!items.length)return;notifShown=true;
   document.getElementById('notif-title').textContent='🚨 逾期品項通知';
   const crit=items.filter(function(r){return overdueLevel(r)===2;}),warn=items.filter(function(r){return overdueLevel(r)===1;});
   let html='';
@@ -1032,13 +1014,7 @@ function closeBatchModal(){document.getElementById('batch-modal-overlay').classL
 async function applyBatch(){
   const reply=document.getElementById('b-reply').value,date=document.getElementById('b-date').value,returnDate=document.getElementById('b-returnDate').value,reason=document.getElementById('b-reason').value,note=document.getElementById('b-note').value,handler=document.getElementById('b-handler').value,cnt=selectedIdx.size;
   const promises=[];
-  selectedIdx.forEach(function(idx){
-    const r=records[idx];
-    if(reply)r.reply=reply;if(date)r.date=date;if(returnDate)r.returnDate=returnDate;
-    if(reason)r.reason=reason;if(note)r.note=note;if(handler)r.handler=handler;
-    r.updatedAt=todayStr();
-    promises.push(saveRecord(r));
-  });
+  selectedIdx.forEach(function(idx){const r=records[idx];if(reply)r.reply=reply;if(date)r.date=date;if(returnDate)r.returnDate=returnDate;if(reason)r.reason=reason;if(note)r.note=note;if(handler)r.handler=handler;r.updatedAt=todayStr();promises.push(saveRecord(r));});
   await Promise.all(promises);
   closeBatchModal();clearSelection();renderTable();updateStats();
   showToast('✓ 已批次更新 '+cnt+' 筆');setSyncStatus('ok','✓ 已同步');
@@ -1064,12 +1040,9 @@ function closeModal(){document.getElementById('edit-modal').classList.remove('op
 async function saveEdit(){
   if(editIdx===null)return;
   const r=records[editIdx];
-  r.reply=document.getElementById('m-reply').value;
-  r.reason=document.getElementById('m-reason').value;
-  r.date=document.getElementById('m-date').value;
-  r.returnDate=document.getElementById('m-returnDate').value;
-  r.note=document.getElementById('m-note').value;
-  r.handler=document.getElementById('m-handler').value;
+  r.reply=document.getElementById('m-reply').value;r.reason=document.getElementById('m-reason').value;
+  r.date=document.getElementById('m-date').value;r.returnDate=document.getElementById('m-returnDate').value;
+  r.note=document.getElementById('m-note').value;r.handler=document.getElementById('m-handler').value;
   r.supplierName=document.getElementById('m-supplierName').value||r.supplierName||'';
   r.updatedAt=todayStr();
   closeModal();renderTable();updateStats();
@@ -1084,54 +1057,37 @@ function exportData(){
   if(!records.length){showToast('⚠ 尚無資料可匯出');return;}
   const today=new Date().toISOString().slice(0,10);
   const rows=records.map(function(r){return {'項次':r.sn,'供應商代號':r.sup,'供應商名稱':r.supplierName||'','儲位':r.loc,'大分類':r.cat,'商品代號':r.sku,'品名':r.name,'庫存數量':r.qty,'商流回覆':r.reply||'未填','不良原因':r.reason||'','反映日期':r.date||'','廠商收退日':r.returnDate||'','逾期天數':r.date&&daysSince(r.date)>0?daysSince(r.date)+'天':'','進度備註':r.note||'','處理人員':r.handler||'','更新日期':r.updatedAt||''};});
-  const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[{wch:6},{wch:12},{wch:20},{wch:10},{wch:10},{wch:12},{wch:35},{wch:8},{wch:10},{wch:18},{wch:12},{wch:12},{wch:10},{wch:25},{wch:10},{wch:12}];
-  const wb2=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb2,ws,'不良品明細');
+  const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:6},{wch:12},{wch:20},{wch:10},{wch:10},{wch:12},{wch:35},{wch:8},{wch:10},{wch:18},{wch:12},{wch:12},{wch:10},{wch:25},{wch:10},{wch:12}];
+  const wb2=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb2,ws,'不良品明細');
   const buf=XLSX.write(wb2,{bookType:'xlsx',type:'array'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'}));
-  a.download='廠退追蹤_'+(currentUser?currentUser.whLabel:'')+'_'+today+'.xlsx';
-  a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'}));
+  a.download='廠退追蹤_'+(currentUser?currentUser.whLabel:'')+'_'+today+'.xlsx';a.click();
   showToast('✓ 已匯出 '+records.length+' 筆');
 }
 
 // ── 管理員 ──
-function showAdminView(){
-  hideAllViews();
-  document.getElementById('admin-view').style.display='flex';
-  loadAdminStats();renderAdminAccounts();
-}
-
+function showAdminView(){hideAllViews();document.getElementById('admin-view').style.display='flex';loadAdminStats();renderAdminAccounts();}
 async function loadAdminStats(){
   const grid=document.getElementById('admin-wh-grid');
   grid.innerHTML='<div style="color:var(--text3);font-size:12px;padding:16px">載入中...</div>';
-  const warehouses=[
-    {key:'kaolog',label:'岡山倉',color:'#10b981'},
-    {key:'dadu01',label:'大肚倉',color:'#3b82f6'},
-    {key:'daxi01',label:'大溪倉',color:'#8b5cf6'},
-  ];
+  const whs=[{key:'kaolog',label:'岡山倉',color:'#10b981'},{key:'dadu01',label:'大肚倉',color:'#3b82f6'},{key:'daxi01',label:'大溪倉',color:'#8b5cf6'}];
   let html='';
-  for(let i=0;i<warehouses.length;i++){
-    const wh=warehouses[i];
-    let data=[];
+  for(let i=0;i<whs.length;i++){
+    const wh=whs[i];let data=[];
     try{data=await sbFetch('GET',TABLE+'?warehouse=eq.'+wh.key+'&limit=1000',null)||[];}catch(e){}
     const recs=data.map(dbToRecord);
     const tot=recs.length,pend=recs.filter(function(r){return !r.reply;}).length,ov=recs.filter(function(r){return isOverdue(r);}).length;
     const tr=recs.filter(function(r){return r.reply==='轉不良';}).length,ret=recs.filter(function(r){return r.reply==='不良退';}).length,sw=recs.filter(function(r){return r.reply==='不良換';}).length;
-    html+='<div class="admin-wh-card">'+
-      '<div class="admin-wh-title"><span class="admin-wh-dot" style="background:'+wh.color+'"></span>'+wh.label+'</div>'+
+    html+='<div class="admin-wh-card"><div class="admin-wh-title"><span class="admin-wh-dot" style="background:'+wh.color+'"></span>'+wh.label+'</div>'+
       '<div class="admin-stat-row"><span class="admin-stat-label">總筆數</span><span class="admin-stat-val">'+tot+'</span></div>'+
       '<div class="admin-stat-row"><span class="admin-stat-label">待處理</span><span class="admin-stat-val '+(pend>0?'warn':'ok')+'">'+pend+'</span></div>'+
       '<div class="admin-stat-row"><span class="admin-stat-label">逾期警示</span><span class="admin-stat-val '+(ov>0?'danger':'ok')+'">'+ov+'</span></div>'+
       '<div class="admin-stat-row"><span class="admin-stat-label">轉不良</span><span class="admin-stat-val">'+tr+'</span></div>'+
       '<div class="admin-stat-row"><span class="admin-stat-label">不良退</span><span class="admin-stat-val">'+ret+'</span></div>'+
-      '<div class="admin-stat-row"><span class="admin-stat-label">不良換</span><span class="admin-stat-val">'+sw+'</span></div>'+
-      '</div>';
+      '<div class="admin-stat-row"><span class="admin-stat-label">不良換</span><span class="admin-stat-val">'+sw+'</span></div></div>';
   }
   grid.innerHTML=html;
 }
-
 function renderAdminAccounts(){
   document.getElementById('admin-accounts-tbody').innerHTML=Object.entries(ACCOUNTS).map(function(entry){
     const id=entry[0],acc=entry[1];
