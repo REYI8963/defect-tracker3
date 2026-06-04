@@ -176,20 +176,50 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 .loading-text{font-size:13px;color:var(--text2);font-weight:500;}
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1917;color:#fff;padding:11px 22px;border-radius:var(--r);font-size:12px;font-weight:500;z-index:500;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow-lg);}
 .toast.show{opacity:1;}
-#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1a1917 0%,#2d2b28 50%,#1a1917 100%);z-index:1000;display:flex;align-items:center;justify-content:center;}
+#login-screen{position:fixed;inset:0;background:linear-gradient(160deg,#f8f6f2 0%,#ede9e0 50%,#f0ece4 100%);z-index:1000;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 #login-screen.hidden{display:none;}
-.login-box{background:var(--surface);border-radius:20px;padding:40px 44px;width:400px;max-width:92vw;box-shadow:0 24px 64px rgba(0,0,0,.35);}
-.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
-.login-title{font-size:20px;font-weight:700;letter-spacing:-0.5px;}
-.login-subtitle{font-size:12px;color:var(--text3);margin-top:2px;}
+/* 貨車動畫 */
+.truck-scene{position:absolute;bottom:60px;left:0;right:0;height:80px;pointer-events:none;overflow:hidden;}
+.truck-road{position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#d4cfc4 20%,#d4cfc4 80%,transparent);}
+.truck-road-dashes{position:absolute;bottom:10px;left:0;right:0;height:2px;background:repeating-linear-gradient(90deg,#c8c4b4 0px,#c8c4b4 30px,transparent 30px,transparent 60px);animation:roadMove 1s linear infinite;}
+.truck{position:absolute;bottom:8px;font-size:42px;animation:truckDrive 4s cubic-bezier(.25,.46,.45,.94) forwards;left:-120px;}
+.truck-dust{position:absolute;bottom:10px;animation:dustMove 4s cubic-bezier(.25,.46,.45,.94) forwards;left:-80px;}
+.dust-particle{display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(180,170,155,.5);margin:0 2px;animation:dustFloat 0.6s ease-out infinite alternate;}
+.dust-particle:nth-child(2){width:5px;height:5px;animation-delay:.15s;}
+.dust-particle:nth-child(3){width:6px;height:6px;animation-delay:.3s;}
+@keyframes truckDrive{0%{left:-120px;opacity:0;}10%{opacity:1;}70%{left:calc(50% - 80px);}85%{left:calc(50% - 60px);}100%{left:calc(50% - 60px);}}
+@keyframes dustMove{0%{left:-80px;opacity:0;}10%{opacity:1;}70%{left:calc(50% - 140px);opacity:.8;}100%{left:calc(50% - 140px);opacity:0;}}
+@keyframes dustFloat{from{transform:translateY(0) scale(1);}to{transform:translateY(-8px) scale(1.3);opacity:0;}}
+@keyframes roadMove{from{background-position:0 0;}to{background-position:-60px 0;}}
+/* 裝飾圓圈 */
+.login-deco{position:absolute;border-radius:50%;opacity:.06;}
+.login-deco-1{width:400px;height:400px;background:#c0392b;top:-100px;right:-80px;}
+.login-deco-2{width:250px;height:250px;background:#c0392b;bottom:80px;left:-60px;}
+.login-deco-3{width:150px;height:150px;background:#c0392b;top:40%;right:10%;}
+/* 登入卡片 */
+.login-box{background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-radius:24px;padding:40px 44px;width:420px;max-width:92vw;box-shadow:0 8px 48px rgba(192,57,43,.12),0 2px 8px rgba(0,0,0,.06);border:1px solid rgba(255,255,255,.8);position:relative;z-index:2;}
+.login-logo-area{display:flex;flex-direction:column;align-items:center;margin-bottom:28px;gap:12px;}
+.login-logo-img{width:72px;height:72px;object-fit:contain;}
+.login-title{font-size:22px;font-weight:800;letter-spacing:-0.5px;color:#1a1917;text-align:center;}
+.login-subtitle{font-size:12px;color:var(--text3);text-align:center;margin-top:2px;}
 .login-form{display:flex;flex-direction:column;gap:14px;}
 .login-field{display:flex;flex-direction:column;gap:6px;}
 .login-field label{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.4px;}
-.login-field input{padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);font-size:14px;outline:none;transition:border .15s;background:var(--surface2);}
-.login-field input:focus{border-color:#1a1917;background:var(--surface);}
-.login-btn{margin-top:6px;padding:13px;border-radius:var(--r);border:none;background:#D94F2B;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s;}
-.login-btn:hover{background:#c0392b;}
+.login-field input{padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);font-size:14px;outline:none;transition:border .15s;background:#faf9f7;}
+.login-field input:focus{border-color:#c0392b;background:var(--surface);}
+.login-btn{margin-top:6px;padding:13px;border-radius:var(--r);border:none;background:#c0392b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s;letter-spacing:.3px;}
+.login-btn:hover{background:#a93226;}
 .login-error{color:#c0392b;font-size:12px;text-align:center;min-height:18px;font-weight:500;}
+.login-change-pw{text-align:center;margin-top:4px;}
+.login-change-pw button{background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;}
+.login-change-pw button:hover{color:var(--text2);}
+/* 修改密碼 modal */
+.change-pw-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1100;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.change-pw-modal.open{display:flex;}
+.change-pw-box{background:#fff;border-radius:var(--r-xl);padding:32px 36px;width:380px;max-width:92vw;box-shadow:var(--shadow-lg);}
+.change-pw-title{font-size:16px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.change-pw-form{display:flex;flex-direction:column;gap:12px;}
+.change-pw-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
 .user-badge{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;}
 .user-dot{width:8px;height:8px;border-radius:50%;}
 .logout-btn{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text2);}
@@ -223,16 +253,51 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 <body>
 
 <div id="login-screen">
+  <!-- 裝飾 -->
+  <div class="login-deco login-deco-1"></div>
+  <div class="login-deco login-deco-2"></div>
+  <div class="login-deco login-deco-3"></div>
+  <!-- 貨車動畫 -->
+  <div class="truck-scene">
+    <div class="truck-road"></div>
+    <div class="truck-road-dashes"></div>
+    <div class="truck">🚚</div>
+    <div class="truck-dust"><span class="dust-particle"></span><span class="dust-particle"></span><span class="dust-particle"></span></div>
+  </div>
+  <!-- 登入卡片 -->
   <div class="login-box">
-    <div class="login-logo">
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="8" fill="#D94F2B"/><rect x="7" y="17" width="22" height="14" rx="1.5" fill="white" opacity="0.95"/><polygon points="7,17 18,11 18,17" fill="white" opacity="0.7"/><polygon points="18,11 29,17 18,17" fill="white" opacity="0.85"/><line x1="18" y1="17" x2="18" y2="31" stroke="#D94F2B" stroke-width="1.5" opacity="0.35"/><circle cx="27" cy="10" r="5" fill="#FF6B3D"/><path d="M24.5 10 L27 7.5 L27 9 L29.5 9 L29.5 10.5 L27 10.5 L27 12 Z" fill="white"/></svg>
-      <div><div class="login-title">廠退追蹤系統</div><div class="login-subtitle">請輸入帳號與密碼登入</div></div>
+    <div class="login-logo-area">
+      <img class="login-logo-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAT4AAAFKCAYAAACVCMFhAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAADMwSURBVHgB7d0HmFxV+T/w75RtSTa9kUYgQBJ6770XFVQsWBBBUBEFRKQoKopSBRUQRUA6SO9FegktlPQQ0nvfbDL1/p/33Dube+/O3J3dmdm5M/P9PE8Su7Mzc/fOmXfPec97ipYCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==" alt="logo" onerror="this.style.display='none'">
+      <div>
+        <div class="login-title">廠退追蹤系統</div>
+        <div class="login-subtitle">請輸入帳號與密碼登入</div>
+      </div>
     </div>
     <div class="login-form">
       <div class="login-field"><label>帳號</label><input type="text" id="login-user" placeholder="請輸入帳號" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"></div>
       <div class="login-field"><label>密碼</label><input type="password" id="login-pass" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <div class="login-error" id="login-error"></div>
       <button class="login-btn" onclick="doLogin()">登入</button>
+    </div>
+    <div class="login-change-pw"><button onclick="openChangePw()">🔑 修改密碼</button></div>
+  </div>
+</div>
+
+<!-- 修改密碼 Modal -->
+<div class="change-pw-modal" id="change-pw-modal">
+  <div class="change-pw-box">
+    <div class="change-pw-title">🔑 修改密碼</div>
+    <div class="change-pw-form">
+      <div class="form-row"><label>帳號</label><input type="text" id="cp-user" placeholder="請輸入帳號"></div>
+      <div class="form-row"><label>舊密碼</label><input type="password" id="cp-old" placeholder="請輸入舊密碼"></div>
+      <div class="form-row"><label>新密碼</label><input type="password" id="cp-new" placeholder="請輸入新密碼（至少4碼）"></div>
+      <div class="form-row"><label>確認新密碼</label><input type="password" id="cp-confirm" placeholder="再次輸入新密碼"></div>
+      <div class="login-error" id="cp-error"></div>
+    </div>
+    <div class="change-pw-footer">
+      <button class="btn" onclick="closeChangePw()">取消</button>
+      <button class="btn btn-dark" onclick="doChangePw()">確認修改</button>
     </div>
   </div>
 </div>
@@ -565,6 +630,53 @@ function daysUntil(ds){if(!ds)return null;const d=new Date(ds);if(isNaN(d))retur
 function overdueLevel(r){const d=daysSince(r.date);if(d===null)return 0;if(d>14)return 2;if(d>7)return 1;return 0;}
 function isOverdue(r){return overdueLevel(r)>0;}
 
+// 密碼儲存（支援修改）
+const PW_STORAGE_KEY = 'defect_tracker_passwords';
+function loadPasswords() {
+  try {
+    const saved = localStorage.getItem(PW_STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return {};
+}
+function savePasswords(pw) {
+  try { localStorage.setItem(PW_STORAGE_KEY, JSON.stringify(pw)); } catch(e) {}
+}
+function getPassword(uid) {
+  const saved = loadPasswords();
+  return saved[uid] || ACCOUNTS[uid].password;
+}
+
+function openChangePw() {
+  document.getElementById('cp-user').value = document.getElementById('login-user').value || '';
+  document.getElementById('cp-old').value = '';
+  document.getElementById('cp-new').value = '';
+  document.getElementById('cp-confirm').value = '';
+  document.getElementById('cp-error').textContent = '';
+  document.getElementById('change-pw-modal').classList.add('open');
+}
+function closeChangePw() {
+  document.getElementById('change-pw-modal').classList.remove('open');
+}
+function doChangePw() {
+  const uid = document.getElementById('cp-user').value.trim().toUpperCase();
+  const oldPw = document.getElementById('cp-old').value;
+  const newPw = document.getElementById('cp-new').value;
+  const confirmPw = document.getElementById('cp-confirm').value;
+  const errEl = document.getElementById('cp-error');
+  if (!uid || !oldPw || !newPw || !confirmPw) { errEl.textContent = '請填寫所有欄位'; return; }
+  if (!ACCOUNTS[uid]) { errEl.textContent = '帳號不存在'; return; }
+  if (getPassword(uid) !== oldPw) { errEl.textContent = '舊密碼錯誤'; return; }
+  if (newPw.length < 4) { errEl.textContent = '新密碼至少需要 4 碼'; return; }
+  if (newPw !== confirmPw) { errEl.textContent = '兩次輸入的新密碼不一致'; return; }
+  const saved = loadPasswords();
+  saved[uid] = newPw;
+  savePasswords(saved);
+  errEl.style.color = 'var(--green)';
+  errEl.textContent = '✓ 密碼修改成功！';
+  setTimeout(function() { closeChangePw(); errEl.style.color = ''; }, 1500);
+}
+
 // ── 登入 ──
 function doLogin(){
   const uid=document.getElementById('login-user').value.trim().toUpperCase();
@@ -572,7 +684,7 @@ function doLogin(){
   const errEl=document.getElementById('login-error');
   if(!uid||!pw){errEl.textContent='請輸入帳號與密碼';return;}
   const acc=ACCOUNTS[uid];
-  if(!acc||acc.password!==pw){errEl.textContent='帳號或密碼錯誤';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();return;}
+  if(!acc||getPassword(uid)!==pw){errEl.textContent='帳號或密碼錯誤';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();return;}
   currentUser={id:uid,...acc};
   errEl.textContent='';
   document.getElementById('login-screen').classList.add('hidden');
