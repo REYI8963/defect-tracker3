@@ -1145,8 +1145,15 @@ async function loadData(){
   setSyncStatus('loading','⏳ 讀取中...');
   document.getElementById('btn-refresh').disabled=true;
   showLoading('讀取資料中...');
+
+  // 加上 10 秒 timeout 保護
+  const timeout = new Promise((_,reject)=>setTimeout(()=>reject(new Error('連線逾時，請重試')),10000));
+
   try{
-    const data=await sbFetch('GET',TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=1000',null);
+    const data = await Promise.race([
+      sbFetch('GET', TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=1000', null),
+      timeout
+    ]);
     records=(data||[]).map(dbToRecord);
     setSyncStatus('ok','✓ 已連線');
     showToast('✓ 已載入 '+records.length+' 筆');
@@ -1158,7 +1165,8 @@ async function loadData(){
     showToast('⚠ 無法連線：'+e.message,5000);
     records=[];showEmptyGuide();
   }
-  hideLoading();document.getElementById('btn-refresh').disabled=false;
+  hideLoading();
+  document.getElementById('btn-refresh').disabled=false;
 }
 
 async function saveRecord(r){
