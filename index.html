@@ -388,7 +388,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 
 <!-- 新增/編輯廠退紀錄 Modal -->
 <div class="modal-overlay" id="return-edit-modal">
-  <div class="return-modal">
+  <div class="modal" style="width:580px;">
     <div class="modal-header">
       <div class="modal-title"><div class="modal-title-icon">📦</div><span id="return-modal-title">新增廠退紀錄</span></div>
       <button class="modal-close" onclick="closeReturnModal()">✕</button>
@@ -410,7 +410,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
           </select>
         </div>
         <div class="form-row"><label>👤 處理人員</label><input type="text" id="r-handler" placeholder="姓名或代號"></div>
-        <!-- 貨運單號（僅委託貨運顯示） -->
         <div class="form-row full" id="r-tracking-row" style="display:none">
           <label>🚛 貨運單號</label>
           <input type="text" id="r-tracking" placeholder="請輸入貨運單號">
