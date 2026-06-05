@@ -238,7 +238,7 @@ tbody tr.overdue-crit:hover td{background:#fee8e8;}
 .guide-step{display:flex;align-items:flex-start;gap:10px;font-size:12px;}
 .guide-num{background:#1a1917;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
 .guide-ok{background:#10b981;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(1px);}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--surface);border-radius:var(--r-xl);border:1px solid var(--border);width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
 .modal-header{padding:22px 26px 0;display:flex;align-items:center;justify-content:space-between;}
@@ -386,7 +386,75 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
   </div>
 </div>
 
-<div class="loading-overlay" id="loading-overlay"><div class="spinner"></div><div class="loading-text" id="loading-text">載入資料中...</div></div>
+<!-- 新增/編輯廠退紀錄 Modal -->
+<div class="modal-overlay" id="return-edit-modal">
+  <div class="return-modal">
+    <div class="modal-header">
+      <div class="modal-title"><div class="modal-title-icon">📦</div><span id="return-modal-title">新增廠退紀錄</span></div>
+      <button class="modal-close" onclick="closeReturnModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row"><label>🔢 退貨單號</label><input type="text" id="r-no" placeholder="例：RET-20260604-001"></div>
+        <div class="form-row"><label>📅 廠商收退日期</label><input type="date" id="r-date"></div>
+        <div class="form-row full"><label>🏢 供應商名稱</label><input type="text" id="r-supplier" placeholder="輸入供應商名稱"></div>
+        <div class="form-row"><label>🏷 商品代號</label><input type="text" id="r-sku" placeholder="SKU"></div>
+        <div class="form-row"><label>📦 數量</label><input type="number" id="r-qty" placeholder="0" min="0"></div>
+        <div class="form-row full"><label>📋 品名</label><input type="text" id="r-name" placeholder="商品名稱"></div>
+        <div class="form-row"><label>🔖 退貨方式</label>
+          <select id="r-type" onchange="onReturnTypeChange()">
+            <option value="">-- 請選擇 --</option>
+            <option>委託貨運</option>
+            <option>廠商派車</option>
+            <option>商品報廢</option>
+          </select>
+        </div>
+        <div class="form-row"><label>👤 處理人員</label><input type="text" id="r-handler" placeholder="姓名或代號"></div>
+        <!-- 貨運單號（僅委託貨運顯示） -->
+        <div class="form-row full" id="r-tracking-row" style="display:none">
+          <label>🚛 貨運單號</label>
+          <input type="text" id="r-tracking" placeholder="請輸入貨運單號">
+        </div>
+        <div class="form-row full"><label>📝 備註</label><textarea id="r-note" placeholder="其他備註"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeReturnModal()">取消</button>
+      <button class="btn btn-dark" onclick="saveReturnRecord()">💾 儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 從追蹤清單轉入 Modal -->
+<div class="modal-overlay" id="transfer-modal">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div class="modal-title"><div class="modal-title-icon">🔄</div>從追蹤清單轉入廠退</div>
+      <button class="modal-close" onclick="closeTransferModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px">勾選要轉入已廠退資料庫的品項，轉入後可補填退貨單號。</p>
+      <div style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr style="background:var(--surface2);position:sticky;top:0;">
+            <th style="padding:9px 12px;text-align:center;width:36px;font-size:11px;font-weight:700;color:var(--text2);">
+              <input type="checkbox" id="transfer-check-all" onchange="toggleTransferAll(this)">
+            </th>
+            <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);">供應商</th>
+            <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);">品名</th>
+            <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);">商流</th>
+            <th style="padding:9px 12px;text-align:right;font-size:11px;font-weight:700;color:var(--text2);">庫存</th>
+          </tr></thead>
+          <tbody id="transfer-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeTransferModal()">取消</button>
+      <button class="btn btn-dark" onclick="doTransfer()">🔄 轉入已廠退資料庫</button>
+    </div>
+  </div>
+</div><div class="spinner"></div><div class="loading-text" id="loading-text">載入資料中...</div></div>
 <div class="toast" id="toast"></div>
 
 <div class="notif-overlay" id="notif-overlay">
@@ -478,6 +546,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
   </div>
   <div class="header-right" id="header-actions" style="display:none">
     <button class="btn" onclick="loadData()" id="btn-refresh">↺ 重新整理</button>
+    <button class="btn" onclick="showReturnView()">📦 已廠退資料庫</button>
     <button class="btn btn-dark" onclick="document.getElementById('file-input').click()">⬆ 匯入 Excel</button>
     <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
     <button class="btn" onclick="exportData()">⬇ 匯出</button>
@@ -587,6 +656,49 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
     </div>
   </div>
 
+  <!-- 已廠退資料庫 -->
+  <div id="return-view">
+    <div class="return-toolbar">
+      <button class="btn btn-sm" onclick="showDashboard()">← 返回儀表板</button>
+      <div class="toolbar-divider"></div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="return-search" placeholder="搜尋退貨單號、供應商、品名..." oninput="renderReturnTable()">
+      </div>
+      <span class="row-count" id="return-row-count"></span>
+      <div class="return-actions">
+        <button class="btn" onclick="openTransferModal()">🔄 從追蹤清單轉入</button>
+        <button class="btn btn-dark" onclick="openReturnModal()">＋ 手動新增</button>
+        <button class="btn" onclick="exportReturnData()">⬇ 匯出</button>
+      </div>
+    </div>
+    <div class="return-table-wrap">
+      <div id="return-empty" class="empty-state" style="display:none">
+        <div class="empty-icon">📦</div>
+        <h3>尚無廠退紀錄</h3>
+        <p>點擊「手動新增」或「從追蹤清單轉入」來建立廠退紀錄</p>
+      </div>
+      <div class="return-table-scroll">
+        <table id="return-table" style="display:none">
+          <thead><tr>
+            <th style="width:44px">#</th>
+            <th style="width:130px">退貨單號</th>
+            <th style="width:150px">供應商名稱</th>
+            <th style="width:100px">商品代號</th>
+            <th>品名</th>
+            <th style="width:54px;text-align:right">數量</th>
+            <th style="width:82px">退貨方式</th>
+            <th style="width:105px">廠商收退日期</th>
+            <th style="width:140px">備註</th>
+            <th style="width:70px">處理人員</th>
+            <th style="width:48px;position:sticky;right:0;background:var(--surface2);z-index:11;box-shadow:-2px 0 4px rgba(0,0,0,.06)"></th>
+          </tr></thead>
+          <tbody id="return-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div id="admin-view">
     <div class="admin-banner">
       <div><h2>👑 管理員後台</h2><p>各倉廠退追蹤統計總覽</p></div>
@@ -607,6 +719,265 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 </div>
 
 <script>
+// ══════════════════════════════════════
+// 已廠退資料庫
+// ══════════════════════════════════════
+const RETURN_TABLE = 'return_records';
+let returnRecords = [], returnEditId = null;
+
+function dbToReturn(r){
+  return {
+    id:r.id, warehouse:r.warehouse, returnNo:r.return_no||'',
+    supplierName:r.supplier_name||'', sku:r.sku||'', name:r.name||'',
+    qty:r.qty||0, returnDate:r.return_date||'', returnType:r.return_type||'',
+    note:r.note||'', handler:r.handler||''
+  };
+}
+function returnToDb(r, wh){
+  return {
+    warehouse:wh, return_no:r.returnNo||'', supplier_name:r.supplierName||'',
+    sku:r.sku||'', name:r.name||'', qty:r.qty||0,
+    return_date:r.returnDate||'', return_type:r.returnType||'',
+    note:r.note||'', handler:r.handler||''
+  };
+}
+
+// 載入廠退資料
+async function loadReturnData(){
+  try{
+    const data = await sbFetch('GET', RETURN_TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=created_at.desc&limit=1000', null);
+    returnRecords = (data||[]).map(dbToReturn);
+  }catch(e){
+    returnRecords = [];
+    showToast('⚠ 廠退資料載入失敗：'+e.message, 4000);
+  }
+}
+
+// 顯示已廠退資料庫
+async function showReturnView(){
+  hideAllViews();
+  document.getElementById('return-view').style.display='flex';
+  showLoading('載入廠退資料...');
+  await loadReturnData();
+  hideLoading();
+  renderReturnTable();
+}
+
+// 渲染廠退表格
+function renderReturnTable(){
+  const q=(document.getElementById('return-search').value||'').toLowerCase();
+  const rows = returnRecords.filter(r=>{
+    if(q&&!([r.returnNo,r.supplierName,r.sku,r.name].join(' ').toLowerCase().includes(q)))return false;
+    return true;
+  });
+  document.getElementById('return-row-count').textContent='顯示 '+rows.length+' / '+returnRecords.length+' 筆';
+  if(rows.length===0){
+    document.getElementById('return-empty').style.display='';
+    document.getElementById('return-table').style.display='none';
+    return;
+  }
+  document.getElementById('return-empty').style.display='none';
+  document.getElementById('return-table').style.display='';
+  function typeBadge(v){
+    if(v==='不良退')return '<span class="return-badge rb-direct">不良退</span>';
+    if(v==='不良換')return '<span class="return-badge rb-exchange">不良換</span>';
+    if(v==='轉不良')return '<span class="return-badge rb-convert">轉不良</span>';
+    return v?'<span class="badge badge-gray">'+v+'</span>':'—';
+  }
+  document.getElementById('return-tbody').innerHTML = rows.map((r,i)=>`
+    <tr style="cursor:pointer" onclick="openReturnEditModal('${r.id}')">
+      <td class="row-num">${i+1}</td>
+      <td class="mono" style="font-size:11px">${r.returnNo||'—'}</td>
+      <td style="font-size:12px">${r.supplierName||'—'}</td>
+      <td class="mono">${r.sku||'—'}</td>
+      <td class="cell-clip" style="max-width:200px" title="${r.name}">${r.name||'—'}</td>
+      <td style="text-align:right;font-weight:600">${r.qty}</td>
+      <td>${typeBadge(r.returnType)}</td>
+      <td style="font-size:12px">${r.returnDate||'—'}</td>
+      <td class="cell-clip" style="max-width:130px;color:var(--text2)">${r.note||'—'}</td>
+      <td style="font-size:12px">${r.handler||'—'}</td>
+      <td style="position:sticky;right:0;background:var(--surface);box-shadow:-2px 0 4px rgba(0,0,0,.06)">
+        <button class="btn btn-sm btn-red" onclick="event.stopPropagation();deleteReturn('${r.id}')">刪除</button>
+      </td>
+    </tr>`).join('');
+}
+
+function onReturnTypeChange(){
+  const v=document.getElementById('r-type').value;
+  document.getElementById('r-tracking-row').style.display=v==='委託貨運'?'':'none';
+  if(v!=='委託貨運') document.getElementById('r-tracking').value='';
+}
+
+function openReturnModal(){
+  returnEditId = null;
+  document.getElementById('return-modal-title').textContent='新增廠退紀錄';
+  ['r-no','r-supplier','r-sku','r-name','r-handler','r-note','r-tracking'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('r-qty').value='';
+  document.getElementById('r-date').value='';
+  document.getElementById('r-type').value='';
+  document.getElementById('r-tracking-row').style.display='none';
+  document.getElementById('return-edit-modal').classList.add('open');
+}
+
+function openReturnEditModal(id){
+  const r = returnRecords.find(x=>x.id===id);
+  if(!r)return;
+  returnEditId = id;
+  document.getElementById('return-modal-title').textContent='編輯廠退紀錄';
+  document.getElementById('r-no').value=r.returnNo||'';
+  document.getElementById('r-supplier').value=r.supplierName||'';
+  document.getElementById('r-sku').value=r.sku||'';
+  document.getElementById('r-name').value=r.name||'';
+  document.getElementById('r-qty').value=r.qty||'';
+  document.getElementById('r-date').value=r.returnDate||'';
+  document.getElementById('r-type').value=r.returnType||'';
+  document.getElementById('r-handler').value=r.handler||'';
+  document.getElementById('r-note').value=r.note||'';
+  // 貨運單號從備註裡解析（格式：貨運單號:XXX|備註:YYY）
+  const trackingMatch=(r.note||'').match(/^貨運單號:([^|]*)\|備註:(.*)/s);
+  if(trackingMatch){
+    document.getElementById('r-tracking').value=trackingMatch[1];
+    document.getElementById('r-note').value=trackingMatch[2];
+  } else {
+    document.getElementById('r-tracking').value='';
+  }
+  document.getElementById('r-tracking-row').style.display=r.returnType==='委託貨運'?'':'none';
+  document.getElementById('return-edit-modal').classList.add('open');
+}
+
+function closeReturnModal(){
+  document.getElementById('return-edit-modal').classList.remove('open');
+  returnEditId=null;
+}
+
+async function saveReturnRecord(){
+  // 若是委託貨運，把貨運單號併入備註儲存
+  const tracking=document.getElementById('r-tracking').value.trim();
+  const noteRaw=document.getElementById('r-note').value.trim();
+  const returnType=document.getElementById('r-type').value;
+  const finalNote = (returnType==='委託貨運'&&tracking)
+    ? '貨運單號:'+tracking+'|備註:'+noteRaw
+    : noteRaw;
+
+  const r={
+    returnNo:document.getElementById('r-no').value.trim(),
+    supplierName:document.getElementById('r-supplier').value.trim(),
+    sku:document.getElementById('r-sku').value.trim(),
+    name:document.getElementById('r-name').value.trim(),
+    qty:Number(document.getElementById('r-qty').value)||0,
+    returnDate:document.getElementById('r-date').value,
+    returnType:returnType,
+    handler:document.getElementById('r-handler').value.trim(),
+    note:finalNote
+  };
+  closeReturnModal();
+  showLoading('儲存中...');
+  try{
+    if(returnEditId){
+      await sbFetch('PATCH', RETURN_TABLE+'?id=eq.'+returnEditId, returnToDb(r, currentUser.whKey));
+      const idx=returnRecords.findIndex(x=>x.id===returnEditId);
+      if(idx>=0) returnRecords[idx]={...returnRecords[idx],...r};
+      showToast('✓ 已更新');
+    } else {
+      const res=await sbFetch('POST', RETURN_TABLE, returnToDb(r, currentUser.whKey));
+      if(res&&res[0]) returnRecords.unshift(dbToReturn(res[0]));
+      showToast('✓ 已新增');
+    }
+    renderReturnTable();
+  }catch(e){
+    showToast('⚠ 儲存失敗：'+e.message,5000);
+    console.error('saveReturnRecord error:',e);
+  }
+  hideLoading();
+}
+
+// 刪除廠退紀錄
+async function deleteReturn(id){
+  const modal=document.getElementById('confirm-modal');
+  document.getElementById('confirm-title').textContent='刪除廠退紀錄';
+  document.getElementById('confirm-msg').textContent='確定要刪除這筆廠退紀錄嗎？此動作無法復原。';
+  document.getElementById('confirm-cancel').onclick=function(){modal.classList.remove('open');};
+  document.getElementById('confirm-ok').textContent='確定刪除';
+  document.getElementById('confirm-ok').onclick=async function(){
+    modal.classList.remove('open');
+    showLoading('刪除中...');
+    try{
+      await sbFetch('DELETE', RETURN_TABLE+'?id=eq.'+id, null);
+      returnRecords=returnRecords.filter(r=>r.id!==id);
+      renderReturnTable();showToast('✓ 已刪除');
+    }catch(e){showToast('⚠ 刪除失敗：'+e.message,4000);}
+    hideLoading();
+  };
+  modal.classList.add('open');
+}
+
+// 從追蹤清單轉入
+function openTransferModal(){
+  const tbody=document.getElementById('transfer-tbody');
+  const available=records.filter(r=>r.reply&&r.reply!=='');
+  if(!available.length){showToast('⚠ 沒有已填寫商流回覆的品項可轉入');return;}
+  tbody.innerHTML=available.map((r,i)=>`
+    <tr>
+      <td style="text-align:center;padding:8px 12px"><input type="checkbox" class="transfer-check" data-idx="${records.indexOf(r)}"></td>
+      <td style="padding:8px 12px;font-size:12px">${r.supplierName||r.sup}</td>
+      <td style="padding:8px 12px;font-size:12px" class="cell-clip" style="max-width:180px">${r.name}</td>
+      <td style="padding:8px 12px">${r.reply?'<span class="badge badge-blue">'+r.reply+'</span>':''}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:600">${r.qty}</td>
+    </tr>`).join('');
+  document.getElementById('transfer-check-all').checked=false;
+  document.getElementById('transfer-modal').classList.add('open');
+}
+function closeTransferModal(){document.getElementById('transfer-modal').classList.remove('open');}
+function toggleTransferAll(cb){document.querySelectorAll('.transfer-check').forEach(el=>el.checked=cb.checked);}
+
+async function doTransfer(){
+  const checked=[...document.querySelectorAll('.transfer-check:checked')];
+  if(!checked.length){showToast('⚠ 請先勾選品項');return;}
+  closeTransferModal();
+  showLoading('轉入中...');
+  try{
+    const bodies=checked.map(cb=>{
+      const r=records[parseInt(cb.dataset.idx)];
+      return returnToDb({
+        returnNo:'', supplierName:r.supplierName||r.sup,
+        sku:r.sku, name:r.name, qty:r.qty,
+        returnDate:r.returnDate||'', returnType:r.reply||'',
+        note:r.note||'', handler:r.handler||''
+      }, currentUser.whKey);
+    });
+    for(let i=0;i<bodies.length;i+=100){
+      const res=await sbFetch('POST', RETURN_TABLE, bodies.slice(i,i+100));
+      if(res) res.forEach(x=>returnRecords.unshift(dbToReturn(x)));
+    }
+    showToast('✓ 已轉入 '+checked.length+' 筆至已廠退資料庫');
+    renderReturnTable();
+  }catch(e){showToast('⚠ 轉入失敗：'+e.message,4000);}
+  hideLoading();
+}
+
+// 匯出廠退資料
+function exportReturnData(){
+  if(!returnRecords.length){showToast('⚠ 尚無資料可匯出');return;}
+  const today=new Date().toISOString().slice(0,10);
+  const rows=returnRecords.map((r,i)=>({
+    '#':i+1, '退貨單號':r.returnNo||'',
+    '供應商名稱':r.supplierName||'', '商品代號':r.sku||'',
+    '品名':r.name||'', '數量':r.qty,
+    '退貨方式':r.returnType||'', '廠商收退日期':r.returnDate||'',
+    '備註':r.note||'', '處理人員':r.handler||''
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:4},{wch:16},{wch:22},{wch:12},{wch:35},{wch:6},{wch:10},{wch:14},{wch:25},{wch:10}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'已廠退紀錄');
+  const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'}));
+  a.download='已廠退紀錄_'+(currentUser?currentUser.whLabel:'')+'_'+today+'.xlsx';
+  a.click();
+  showToast('✓ 已匯出 '+returnRecords.length+' 筆');
+}
+
 // ══════════════════════════════════════
 // Supabase 設定
 // ══════════════════════════════════════
@@ -747,6 +1118,7 @@ function doLogout(){
 function hideAllViews(){
   document.getElementById('dashboard-view').style.display='none';
   document.getElementById('table-view').style.display='none';
+  document.getElementById('return-view').style.display='none';
   document.getElementById('admin-view').style.display='none';
   document.getElementById('sidebar').style.display='none';
 }
