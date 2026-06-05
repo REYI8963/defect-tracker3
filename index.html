@@ -851,13 +851,10 @@ function closeReturnModal(){
 }
 
 async function saveReturnRecord(){
-  // 若是委託貨運，把貨運單號併入備註儲存
+  const returnType=document.getElementById('r-type').value;
   const tracking=document.getElementById('r-tracking').value.trim();
   const noteRaw=document.getElementById('r-note').value.trim();
-  const returnType=document.getElementById('r-type').value;
-  const finalNote = (returnType==='委託貨運'&&tracking)
-    ? '貨運單號:'+tracking+'|備註:'+noteRaw
-    : noteRaw;
+  const finalNote=(returnType==='委託貨運'&&tracking)?'貨運單號:'+tracking+'|備註:'+noteRaw:noteRaw;
 
   const r={
     returnNo:document.getElementById('r-no').value.trim(),
@@ -870,15 +867,19 @@ async function saveReturnRecord(){
     handler:document.getElementById('r-handler').value.trim(),
     note:finalNote
   };
+
+  const editingId = returnEditId; // 儲存當前編輯ID
   closeReturnModal();
   showLoading('儲存中...');
   try{
-    if(returnEditId){
-      await sbFetch('PATCH', RETURN_TABLE+'?id=eq.'+returnEditId, returnToDb(r, currentUser.whKey));
-      const idx=returnRecords.findIndex(x=>x.id===returnEditId);
+    if(editingId){
+      // 修改現有紀錄
+      await sbFetch('PATCH', RETURN_TABLE+'?id=eq.'+editingId, returnToDb(r, currentUser.whKey));
+      const idx=returnRecords.findIndex(x=>x.id===editingId);
       if(idx>=0) returnRecords[idx]={...returnRecords[idx],...r};
       showToast('✓ 已更新');
     } else {
+      // 新增紀錄
       const res=await sbFetch('POST', RETURN_TABLE, returnToDb(r, currentUser.whKey));
       if(res&&res[0]) returnRecords.unshift(dbToReturn(res[0]));
       showToast('✓ 已新增');
@@ -886,7 +887,6 @@ async function saveReturnRecord(){
     renderReturnTable();
   }catch(e){
     showToast('⚠ 儲存失敗：'+e.message,5000);
-    console.error('saveReturnRecord error:',e);
   }
   hideLoading();
 }
