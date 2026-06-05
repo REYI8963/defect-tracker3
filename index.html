@@ -1074,8 +1074,16 @@ function doChangePw(){
 }
 
 // ── Helpers ──
-function showLoading(msg){document.getElementById('loading-text').textContent=msg||'處理中...';document.getElementById('loading-overlay').classList.add('show');}
-function hideLoading(){document.getElementById('loading-overlay').classList.remove('show');}
+function showLoading(msg){
+  const el=document.getElementById('loading-overlay');
+  const txt=document.getElementById('loading-text');
+  if(el) el.classList.add('show');
+  if(txt) txt.textContent=msg||'處理中...';
+}
+function hideLoading(){
+  const el=document.getElementById('loading-overlay');
+  if(el) el.classList.remove('show');
+}
 function showToast(msg,ms){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},ms||2500);}
 function setSyncStatus(type,msg){const el=document.getElementById('sync-status');el.className='sync-pill sync-'+type;el.textContent=msg;}
 function formatDate(val){if(!val)return '';const s=String(val).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const d=new Date(s);if(isNaN(d))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
