@@ -207,6 +207,15 @@ body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;
 table{width:100%;border-collapse:collapse;}
 thead tr{background:var(--surface2);position:sticky;top:0;z-index:10;}
 th{padding:11px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;letter-spacing:.4px;text-transform:uppercase;background:var(--surface2);box-shadow:0 1px 0 var(--border);}
+/* 可排序欄位 */
+th.sortable{cursor:pointer;user-select:none;}
+th.sortable:hover{background:#e8e7e0;color:var(--text);}
+th.sort-asc::after{content:' ▲';font-size:9px;color:var(--text);}
+th.sort-desc::after{content:' ▼';font-size:9px;color:var(--text);}
+th.sort-none::after{content:' ⇅';font-size:9px;color:var(--text3);}
+/* 沿用上筆按鈕 */
+.copy-last-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;border-radius:var(--r);border:1.5px dashed var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;width:100%;margin-bottom:14px;}
+.copy-last-btn:hover{border-color:var(--teal);background:var(--teal-bg);color:var(--teal);}
 td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px;}
 tr:last-child td{border-bottom:none;}
 tbody tr:hover td{background:#fafaf6;}
@@ -240,6 +249,13 @@ tbody tr.overdue-crit:hover td{background:#fee8e8;}
 .guide-ok{background:#10b981;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(1px);}
 .modal-overlay.open{display:flex;}
+/* ── 可排序欄位標頭樣式 ── */
+.sortable{cursor:pointer;user-select:none;position:relative;}
+.sortable:hover{background:#e8e7e0 !important;}
+.sortable::after{content:'';display:inline-block;margin-left:5px;opacity:.35;font-size:10px;}
+.sortable.sort-asc::after{content:'▲';opacity:1;color:#1a1917;}
+.sortable.sort-desc::after{content:'▼';opacity:1;color:#1a1917;}
+.sortable.sort-none::after{content:'⇅';opacity:.3;}
 .modal,.return-modal{background:var(--surface);border-radius:var(--r-xl);border:1px solid var(--border);width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
 .modal-header{padding:22px 26px 0;display:flex;align-items:center;justify-content:space-between;}
 .modal-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
@@ -394,6 +410,10 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
       <button class="modal-close" onclick="closeReturnModal()">✕</button>
     </div>
     <div class="modal-body">
+      <!-- 沿用上筆資訊按鈕：只在新增模式且有歷史紀錄時顯示 -->
+      <button id="copy-last-btn" onclick="copyLastReturn()" style="display:none;width:100%;margin-bottom:14px;padding:10px 14px;border-radius:var(--r);border:1.5px dashed #86efac;background:#f0fff4;color:#166534;font-size:12px;font-weight:600;cursor:pointer;text-align:left;transition:background .15s;">
+        📋 沿用上一筆：帶入退貨單號、供應商、退貨方式、收退日期、處理人員
+      </button>
       <div class="form-grid">
         <div class="form-row"><label>🔢 退貨單號</label><input type="text" id="r-no" placeholder="例：RET-20260604-001"></div>
         <div class="form-row"><label>📅 廠商收退日期</label><input type="date" id="r-date"></div>
@@ -632,21 +652,21 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
           <table id="main-table" style="display:none">
             <thead><tr>
               <th class="th-check"><input type="checkbox" id="check-all" onchange="toggleCheckAll(this)"></th>
-              <th style="width:44px">#</th>
-              <th style="width:86px">供應商代號</th>
-              <th style="width:140px">供應商名稱</th>
-              <th style="width:78px">儲位</th>
-              <th style="width:74px">大分類</th>
-              <th style="width:86px">商品代號</th>
-              <th>品名</th>
-              <th style="width:54px;text-align:right">庫存</th>
-              <th style="width:82px">商流回覆</th>
+              <th style="width:44px" class="sortable sort-none" onclick="sortBy('sn')" id="th-sn">#</th>
+              <th style="width:86px" class="sortable sort-none" onclick="sortBy('sup')" id="th-sup">供應商代號</th>
+              <th style="width:140px" class="sortable sort-none" onclick="sortBy('supplierName')" id="th-supplierName">供應商名稱</th>
+              <th style="width:78px" class="sortable sort-none" onclick="sortBy('loc')" id="th-loc">儲位</th>
+              <th style="width:74px" class="sortable sort-none" onclick="sortBy('cat')" id="th-cat">大分類</th>
+              <th style="width:86px" class="sortable sort-none" onclick="sortBy('sku')" id="th-sku">商品代號</th>
+              <th class="sortable sort-none" onclick="sortBy('name')" id="th-name">品名</th>
+              <th style="width:54px;text-align:right" class="sortable sort-none" onclick="sortBy('qty')" id="th-qty">庫存</th>
+              <th style="width:82px" class="sortable sort-none" onclick="sortBy('reply')" id="th-reply">商流回覆</th>
               <th style="width:112px">不良原因</th>
-              <th style="width:100px">反映日期</th>
-              <th style="width:110px">廠商收退日</th>
+              <th style="width:100px" class="sortable sort-none" onclick="sortBy('date')" id="th-date">反映日期</th>
+              <th style="width:110px" class="sortable sort-none" onclick="sortBy('returnDate')" id="th-returnDate">廠商收退日</th>
               <th style="width:134px">進度備註</th>
               <th style="width:70px">處理人員</th>
-              <th style="width:88px">更新日期</th>
+              <th style="width:88px" class="sortable sort-none" onclick="sortBy('updatedAt')" id="th-updatedAt">更新日期</th>
               <th style="width:48px;position:sticky;right:0;background:var(--surface2);z-index:11;box-shadow:-2px 0 4px rgba(0,0,0,.06)"></th>
             </tr></thead>
             <tbody id="tbody"></tbody>
@@ -682,15 +702,15 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
         <table id="return-table" style="display:none">
           <thead><tr>
             <th style="width:44px">#</th>
-            <th style="width:130px">退貨單號</th>
-            <th style="width:150px">供應商名稱</th>
-            <th style="width:100px">商品代號</th>
-            <th>品名</th>
-            <th style="width:54px;text-align:right">數量</th>
-            <th style="width:82px">退貨方式</th>
-            <th style="width:105px">廠商收退日期</th>
+            <th style="width:130px" class="sortable sort-none" onclick="sortReturnBy('returnNo')" id="rth-returnNo">退貨單號</th>
+            <th style="width:150px" class="sortable sort-none" onclick="sortReturnBy('supplierName')" id="rth-supplierName">供應商名稱</th>
+            <th style="width:100px" class="sortable sort-none" onclick="sortReturnBy('sku')" id="rth-sku">商品代號</th>
+            <th class="sortable sort-none" onclick="sortReturnBy('name')" id="rth-name">品名</th>
+            <th style="width:54px;text-align:right" class="sortable sort-none" onclick="sortReturnBy('qty')" id="rth-qty">數量</th>
+            <th style="width:82px" class="sortable sort-none" onclick="sortReturnBy('returnType')" id="rth-returnType">退貨方式</th>
+            <th style="width:105px" class="sortable sort-none" onclick="sortReturnBy('returnDate')" id="rth-returnDate">廠商收退日期</th>
             <th style="width:140px">備註</th>
-            <th style="width:70px">處理人員</th>
+            <th style="width:70px" class="sortable sort-none" onclick="sortReturnBy('handler')" id="rth-handler">處理人員</th>
             <th style="width:48px;position:sticky;right:0;background:var(--surface2);z-index:11;box-shadow:-2px 0 4px rgba(0,0,0,.06)"></th>
           </tr></thead>
           <tbody id="return-tbody"></tbody>
@@ -725,6 +745,10 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 const RETURN_TABLE = 'return_records';
 let returnRecords = [], returnEditId = null;
 
+// ── 排序狀態：追蹤追蹤清單與廠退資料庫各自的排序欄位與方向 ──
+let sortState = { field: null, dir: 'asc' };       // 追蹤清單排序
+let returnSortState = { field: null, dir: 'asc' }; // 廠退資料庫排序
+
 function dbToReturn(r){
   return {
     id:r.id, warehouse:r.warehouse, returnNo:r.return_no||'',
@@ -742,7 +766,91 @@ function returnToDb(r, wh){
   };
 }
 
-// 載入廠退資料
+// ── 追蹤清單排序 ──
+// 點擊欄位標頭：同欄位切換升降序，不同欄位重設為升序
+function sortBy(field) {
+  if (sortState.field === field) {
+    // 同欄位：升序→降序→取消
+    sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortState.field = field;
+    sortState.dir = 'asc';
+  }
+  updateSortHeaders('th-', sortState);  // 更新表頭箭頭
+  renderTable();
+}
+
+// ── 廠退資料庫排序 ──
+function sortReturnBy(field) {
+  if (returnSortState.field === field) {
+    returnSortState.dir = returnSortState.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    returnSortState.field = field;
+    returnSortState.dir = 'asc';
+  }
+  updateSortHeaders('rth-', returnSortState);
+  renderReturnTable();
+}
+
+// ── 更新表頭的排序箭頭 CSS class ──
+function updateSortHeaders(prefix, state) {
+  // 重設所有 sortable 標頭
+  document.querySelectorAll('th.sortable').forEach(function(th) {
+    th.classList.remove('sort-asc', 'sort-desc');
+    th.classList.add('sort-none');
+  });
+  if (!state.field) return;
+  const el = document.getElementById(prefix + state.field);
+  if (el) {
+    el.classList.remove('sort-none');
+    el.classList.add(state.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  }
+}
+
+// ── 通用排序函式：對陣列依欄位與方向排序 ──
+function applySortToRows(rows, state) {
+  if (!state.field) return rows;
+  const f = state.field, dir = state.dir;
+  return [...rows].sort(function(a, b) {
+    let va = a[f] ?? '', vb = b[f] ?? '';
+    // 數字欄位（庫存）用數值比較
+    if (f === 'qty' || f === 'sn') {
+      va = Number(va) || 0;
+      vb = Number(vb) || 0;
+      return dir === 'asc' ? va - vb : vb - va;
+    }
+    // 日期欄位轉為可比較字串（空值排後面）
+    if (f === 'date' || f === 'returnDate' || f === 'updatedAt') {
+      va = va || 'zzzz'; // 空值排到最後
+      vb = vb || 'zzzz';
+    }
+    const cmp = String(va).localeCompare(String(vb), 'zh-TW', { numeric: true });
+    return dir === 'asc' ? cmp : -cmp;
+  });
+}
+
+// ── 沿用上筆：將最近一筆廠退紀錄的共用資訊填入新增表單 ──
+// 只帶入「退貨單號、供應商、收退日期、退貨方式、處理人員」
+// SKU、品名、數量保留空白，讓使用者自行填寫
+function copyLastReturn() {
+  if (!returnRecords.length) return;
+  const last = returnRecords[0]; // 最新一筆（資料庫以 created_at desc 排序）
+  document.getElementById('r-no').value      = last.returnNo || '';
+  document.getElementById('r-supplier').value = last.supplierName || '';
+  document.getElementById('r-date').value    = last.returnDate || '';
+  document.getElementById('r-type').value    = last.returnType || '';
+  document.getElementById('r-handler').value = last.handler || '';
+  // 同步顯示/隱藏貨運單號欄位
+  onReturnTypeChange();
+  // 若是委託貨運，也嘗試帶入貨運單號
+  if (last.returnType === '委託貨運') {
+    const m = (last.note || '').match(/^貨運單號:([^|]*)\|/);
+    if (m) document.getElementById('r-tracking').value = m[1];
+  }
+  showToast('✓ 已沿用上一筆資訊，請填寫商品資料');
+}
+
+
 async function loadReturnData(){
   try{
     const data = await sbFetch('GET', RETURN_TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=created_at.desc&limit=1000', null);
@@ -763,13 +871,15 @@ async function showReturnView(){
   renderReturnTable();
 }
 
-// 渲染廠退表格
+// 渲染廠退表格（含排序）
 function renderReturnTable(){
   const q=(document.getElementById('return-search').value||'').toLowerCase();
-  const rows = returnRecords.filter(r=>{
+  // 先篩選，再排序
+  let rows = returnRecords.filter(r=>{
     if(q&&!([r.returnNo,r.supplierName,r.sku,r.name].join(' ').toLowerCase().includes(q)))return false;
     return true;
   });
+  rows = applySortToRows(rows, returnSortState); // 套用排序
   document.getElementById('return-row-count').textContent='顯示 '+rows.length+' / '+returnRecords.length+' 筆';
   if(rows.length===0){
     document.getElementById('return-empty').style.display='';
@@ -816,6 +926,8 @@ function openReturnModal(){
   document.getElementById('r-date').value='';
   document.getElementById('r-type').value='';
   document.getElementById('r-tracking-row').style.display='none';
+  // 有歷史紀錄時才顯示「沿用上筆」按鈕
+  document.getElementById('copy-last-btn').style.display=returnRecords.length>0?'':'none';
   document.getElementById('return-edit-modal').classList.add('open');
 }
 
@@ -824,6 +936,7 @@ function openReturnEditModal(id){
   if(!r)return;
   returnEditId = id;
   document.getElementById('return-modal-title').textContent='編輯廠退紀錄';
+  document.getElementById('copy-last-btn').style.display='none'; // 編輯模式不顯示
   document.getElementById('r-no').value=r.returnNo||'';
   document.getElementById('r-supplier').value=r.supplierName||'';
   document.getElementById('r-sku').value=r.sku||'';
@@ -1279,7 +1392,8 @@ function renderTable(){
   const fC=document.getElementById('filter-cat').value;
   const fO=document.getElementById('filter-overdue').value;
   const fS=document.getElementById('filter-sup').value;
-  const rows=records.filter(function(r){
+  // 先篩選，再套用排序
+  let rows=records.filter(function(r){
     if(q&&!([r.sup,r.name,r.sku,r.loc,r.supplierName||''].join(' ').toLowerCase().includes(q)))return false;
     if(fR==='__empty'&&r.reply)return false;
     if(fR&&fR!=='__empty'&&r.reply!==fR)return false;
@@ -1288,6 +1402,7 @@ function renderTable(){
     if(fS&&r.sup!==fS)return false;
     return true;
   });
+  rows = applySortToRows(rows, sortState); // 套用排序
   document.getElementById('row-count').textContent='顯示 '+rows.length+' / '+records.length+' 筆';
   document.getElementById('tbody').innerHTML=rows.map(function(r){
     const ri=records.indexOf(r);
