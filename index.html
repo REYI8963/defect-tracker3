@@ -1179,17 +1179,31 @@ function renderMobileCards(rows){
     const ri = records.indexOf(r);
     const odLv = overdueLevel(r), days = daysSince(r.date);
     const odClass = odLv===2?'overdue-crit':odLv===1?'overdue-warn':'';
-    // 逾期標示
     const odPill = odLv===2
       ? '<span class="overdue-crit-pill">🔴 逾'+days+'天</span>'
       : odLv===1 ? '<span class="overdue-warn-pill">🟡 逾'+days+'天</span>' : '';
-    // 廠商收退日
     let retLabel = '';
     if(r.returnDate){
       const dt = daysUntil(r.returnDate);
       if(dt<0) retLabel='<span class="return-date-over">已過期</span>';
       else if(dt===0) retLabel='<span class="return-date-today">📦今日收退</span>';
       else if(dt<=2) retLabel='<span class="return-date-soon">D-'+dt+'</span>';
+    }
+    // 效期品顯示：清楚區分三種狀態
+    let expiryHtml = '';
+    if(!r.isExpiry){
+      expiryHtml = '<span style="font-size:10px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);padding:1px 5px;border-radius:20px">非效期</span>';
+    } else if(!r.expiryDate){
+      expiryHtml = '<span class="expiry-warn">⚠️ 效期品・尚未填寫日期</span>';
+    } else {
+      const d = daysUntil(r.expiryDate);
+      let pill;
+      if(d<0) pill='<span class="expiry-over">已過期'+Math.abs(d)+'天</span>';
+      else if(d<=7) pill='<span class="expiry-crit">⚡D-'+d+'</span>';
+      else if(d<=30) pill='<span class="expiry-warn">D-'+d+'</span>';
+      else if(d<=60) pill='<span class="expiry-ok">D-'+d+'</span>';
+      else pill='<span class="badge badge-gray" style="font-size:10px">D-'+d+'</span>';
+      expiryHtml = '<span style="font-size:10px;color:var(--text3)">🕐 '+r.expiryDate+'</span> '+pill;
     }
     const supplierStr = r.supplierName || r.sup || '';
     return `<div class="m-card ${odClass}" onclick="openEdit(${ri})">
@@ -1200,8 +1214,9 @@ function renderMobileCards(rows){
       <div class="m-card-row">
         <span>🏢 ${supplierStr}</span>
         <span>📦 庫存 <strong>${r.qty}</strong></span>
-        ${r.cat?'<span class="badge badge-gray" style="font-size:10px">'+r.cat+'</span>':''}
+        ${r.cat?'<span class="badge badge-cat-'+(r.cat==='預購'?'preorder':r.cat==='食品'?'food':r.cat==='居家/美妝'?'home':'intl')+'" style="font-size:10px">'+r.cat+'</span>':''}
       </div>
+      <div class="m-card-row" style="margin-top:4px">${expiryHtml}</div>
       ${r.reason?'<div class="m-card-row" style="margin-top:2px;color:var(--text3)">⚠️ '+r.reason+'</div>':''}
       ${r.note?'<div class="m-card-row" style="margin-top:2px;color:var(--text3)">📝 '+r.note+'</div>':''}
       <div class="m-card-bottom">
@@ -2051,16 +2066,19 @@ function renderTable(){
     }
     // 效期品欄位 HTML
     function expiryCell(r){
-      if(!r.isExpiry) return '<td style="text-align:center;color:var(--text3)">—</td><td>—</td>';
-      if(!r.expiryDate) return '<td style="text-align:center"><span class="expiry-warn">效期品</span></td><td style="color:var(--coral)">未填</td>';
+      // 非效期品：顯示灰色「非效期」標籤，清楚區分
+      if(!r.isExpiry) return '<td style="text-align:center"><span style="font-size:10px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);padding:1px 6px;border-radius:20px;white-space:nowrap">非效期</span></td><td style="color:var(--text3);font-size:11px;text-align:center">—</td>';
+      // 效期品但尚未填寫日期：橘色警示
+      if(!r.expiryDate) return '<td style="text-align:center"><span class="expiry-warn" style="white-space:nowrap">⚠️ 效期品</span></td><td style="color:var(--coral);font-size:11px;font-weight:600">尚未填寫</td>';
+      // 效期品有日期：顯示天數倒數
       const d=daysUntil(r.expiryDate);
       let pill;
-      if(d<0) pill='<span class="expiry-over">已過期</span>';
-      else if(d<=7) pill='<span class="expiry-crit">D-'+d+'</span>';
+      if(d<0) pill='<span class="expiry-over">已過期'+Math.abs(d)+'天</span>';
+      else if(d<=7) pill='<span class="expiry-crit">⚡D-'+d+'</span>';
       else if(d<=30) pill='<span class="expiry-warn">D-'+d+'</span>';
       else if(d<=60) pill='<span class="expiry-ok">D-'+d+'</span>';
       else pill='<span class="badge badge-gray" style="font-size:10px">D-'+d+'</span>';
-      return '<td style="text-align:center"><span class="expiry-ok">✓</span></td><td style="font-size:12px;white-space:nowrap">'+r.expiryDate+' '+pill+'</td>';
+      return '<td style="text-align:center"><span class="expiry-ok" style="white-space:nowrap">✓ 效期品</span></td><td style="font-size:12px;white-space:nowrap">'+r.expiryDate+' '+pill+'</td>';
     }
     return '<tr class="'+odClass+'" onclick="handleRowClick(event,'+ri+')" style="cursor:pointer">'+
       '<td class="td-check"><input type="checkbox" class="row-check" data-idx="'+ri+'" onchange="onRowCheck(this)"></td>'+
