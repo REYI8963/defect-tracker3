@@ -191,6 +191,10 @@ body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;
     margin:0;
     width:100%;
   }
+  /* 效期品卡片跨兩欄，解決奇數卡片右邊空白問題 */
+  #card-expiry{ grid-column: 1 / -1; }
+  /* 手機版 main 不用 min-height，避免下方空白 */
+  .main{ min-height:0; height:calc(100vh - var(--header-h)); }
 }
 .stat-card{
   background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);
