@@ -617,11 +617,26 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
     padding:11px 12px;
   }
 
-  /* 通知也改底部 */
+  /* 通知視窗改底部滑入，並預留底部導覽高度 */
   .notif-overlay{ align-items:flex-end; }
   .notif-box{
-    width:100%; max-width:100%; border-radius:var(--r-xl) var(--r-xl) 0 0;
-    max-height:80vh;
+    width:100%; max-width:100%;
+    border-radius:var(--r-xl) var(--r-xl) 0 0;
+    max-height:75vh;
+    /* 底部留空，避免被導覽列遮住 */
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  /* 效期通知也從底部滑入 */
+  #expiry-notif-overlay{ align-items:flex-end; }
+  #expiry-notif-overlay .notif-box{
+    width:100%; max-width:100%;
+    border-radius:var(--r-xl) var(--r-xl) 0 0;
+    max-height:75vh;
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  /* 通知頁尾按鈕加底部安全距離 */
+  .notif-footer{
+    padding-bottom:calc(14px + env(safe-area-inset-bottom, 0px));
   }
 
   /* 批次 modal */
@@ -1861,10 +1876,11 @@ function showTableIfHasData(){
 
 // ── 資料（Supabase）──
 async function loadData(){
-  if(!currentUser||currentUser.role==='admin')return;
+  if(!currentUser)return;
   setSyncStatus('loading','⏳ 讀取中...');
   document.getElementById('btn-refresh').disabled=true;
   showLoading('讀取資料中...');
+  notifShown=false; // 每次載入重設，確保通知正常彈出
 
   // 加上 10 秒 timeout 保護
   const timeout = new Promise((_,reject)=>setTimeout(()=>reject(new Error('連線逾時，請重試')),10000));
@@ -1996,7 +2012,7 @@ function handleFile(input){
       let msg='✓ 匯入完成：新增 '+added+' 筆，更新 '+updated+' 筆';
       if(keepOld.length>0)msg+='，保留舊資料 '+keepOld.length+' 筆';
       showToast(msg,4000);
-      if(records.length>0){showDashboard();setTimeout(showReturnDateNotif,600);}
+      if(records.length>0){showDashboard();setTimeout(function(){showReturnDateNotif();setTimeout(showExpiryNotif,400);},600);}
       await saveAllRecords();renderTable();updateStats();
     }catch(err){alert('讀取失敗：'+err.message);}
     hideLoading();input.value='';
