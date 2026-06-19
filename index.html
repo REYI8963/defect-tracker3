@@ -165,27 +165,56 @@ body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;
    Main layout
 ═══════════════════════════ */
 .main{margin-top:var(--header-h);display:flex;min-height:calc(100vh - var(--header-h));}
-#dashboard-view{flex:1;display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
-.dash-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:1200px;}
-@media(min-width:1100px){.dash-cards{grid-template-columns:repeat(8,1fr);}}
-@media(max-width:600px){
-  /* 手機：2欄，填滿畫面不留白 */
-  #dashboard-view{padding:12px 10px;align-items:flex-start;justify-content:flex-start;}
-  .dash-cards{grid-template-columns:repeat(2,1fr);gap:8px;width:100%;}
+/* 儀表板容器 */
+#dashboard-view{
+  flex:1; display:none;
+  padding:32px 24px;
+  overflow-y:auto;
+  /* 用 flex 讓卡片在桌面版垂直置中 */
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
 }
-.stat-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:transform .18s,box-shadow .18s;}
+.dash-cards{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:12px; width:100%; max-width:1200px;
+  align-items:start; /* 每格高度自適應 */
+}
+@media(max-width:1100px){.dash-cards{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:768px){
+  #dashboard-view{
+    padding:10px 8px;
+    justify-content:flex-start; /* 手機靠頂，不置中 */
+  }
+  .dash-cards{grid-template-columns:repeat(2,1fr);gap:8px;}
+}
+.stat-card{
+  background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);
+  padding:18px 14px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:5px;
+  cursor:pointer;transition:transform .18s,box-shadow .18s;
+  align-self:start; /* 卡片高度由內容決定，不拉伸 */
+}
 .stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);}
 .stat-card.active{outline:2.5px solid #1a1917;outline-offset:2px;}
 .stat-card-icon{font-size:22px;margin-bottom:2px;}
-.stat-card-val{font-size:38px;font-weight:800;line-height:1;letter-spacing:-1.5px;}
+.stat-card-val{font-size:36px;font-weight:800;line-height:1;letter-spacing:-1.5px;}
 .stat-card-label{font-size:13px;font-weight:600;}
 .stat-card-sub{font-size:11px;color:var(--text3);}
+/* 手機版卡片縮小 */
+@media(max-width:768px){
+  .stat-card{padding:12px 10px;}
+  .stat-card-icon{font-size:18px;}
+  .stat-card-val{font-size:26px;}
+  .stat-card-label{font-size:11px;}
+  .stat-card-sub{display:none;}
+}
 .card-pending{border-left:4px solid #f59e0b;}.card-pending .stat-card-val{color:#d97706;}
 .card-overdue{border-left:4px solid var(--coral);}.card-overdue .stat-card-val{color:var(--coral);}
 .card-trans{border-left:4px solid var(--blue);}.card-trans .stat-card-val{color:var(--blue);}
 .card-ret{border-left:4px solid #ef4444;}.card-ret .stat-card-val{color:var(--coral);}
 .card-swap{border-left:4px solid var(--teal);}.card-swap .stat-card-val{color:var(--teal);}
-.card-matched{border-left:4px solid #10b981;}.card-matched .stat-card-val{color:var(--green);}
 #table-view{flex:1;display:none;flex-direction:row;}
 #sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:12px 0;display:none;flex-direction:column;gap:2px;overflow-y:auto;transition:width .2s;}
 #sidebar.collapsed{width:52px;}
@@ -461,15 +490,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 .mob-nav-btn.active{ color:var(--coral); }
 .mob-nav-btn .mob-icon{ font-size:20px; line-height:1; }
 .mob-nav-btn .mob-label{ font-size:10px; }
-
-/* ── 手機版儀表板卡片 ── */
-@media(max-width:768px){
-  .stat-card{ padding:14px 12px; }
-  .stat-card-val{ font-size:28px; }
-  .stat-card-label{ font-size:12px; }
-  .stat-card-sub{ display:none; }
-  .stat-card-icon{ font-size:18px; }
-}
 
 /* ── 手機版工具列 ── */
 @media(max-width:768px){
@@ -960,7 +980,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 </div>
 
 <div class="main">
-  <div id="dashboard-view" style="flex:1;display:none;align-items:center;justify-content:center;padding:32px 24px;">
+  <div id="dashboard-view" style="display:none;">
     <div class="dash-cards">
       <div class="stat-card" onclick="showTable('all')" id="card-all" style="border-left:4px solid #1a1917">
         <div class="stat-card-icon">📋</div><div class="stat-card-val" id="st-total" style="color:var(--text)">—</div>
@@ -986,10 +1006,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
         <div class="stat-card-icon">🔁</div><div class="stat-card-val" id="st-swap">—</div>
         <div class="stat-card-label">不良換</div><div class="stat-card-sub">商流回覆：不良換</div>
       </div>
-      <div class="stat-card card-matched" onclick="showTable('matched')" id="card-matched">
-        <div class="stat-card-icon">✅</div><div class="stat-card-val" id="st-matched">—</div>
-        <div class="stat-card-label">已帶入名稱</div><div class="stat-card-sub">有供應商名稱</div>
-      </div>
       <div class="stat-card" onclick="showTable('expiry')" id="card-expiry" style="border-left:4px solid #8b5cf6">
         <div class="stat-card-icon">🕐</div><div class="stat-card-val" id="st-expiry" style="color:#7c3aed">—</div>
         <div class="stat-card-label">效期品</div><div class="stat-card-sub">已標記效期品項</div>
@@ -1008,7 +1024,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
       <div class="sidebar-item" id="sidebar-trans" onclick="filterByCard('trans')"><div class="sidebar-icon">🔄</div><div class="sidebar-info"><div class="sidebar-label">轉不良</div></div><div class="sidebar-val" id="sb-val-trans">—</div></div>
       <div class="sidebar-item" id="sidebar-ret" onclick="filterByCard('ret')"><div class="sidebar-icon">↩️</div><div class="sidebar-info"><div class="sidebar-label">不良退</div></div><div class="sidebar-val" id="sb-val-ret">—</div></div>
       <div class="sidebar-item" id="sidebar-swap" onclick="filterByCard('swap')"><div class="sidebar-icon">🔁</div><div class="sidebar-info"><div class="sidebar-label">不良換</div></div><div class="sidebar-val" id="sb-val-swap">—</div></div>
-      <div class="sidebar-item" id="sidebar-matched" onclick="filterByCard('matched')"><div class="sidebar-icon">✅</div><div class="sidebar-info"><div class="sidebar-label">帶入名稱</div></div><div class="sidebar-val" id="sb-val-matched">—</div></div>
       <div class="sidebar-item" id="sidebar-expiry" onclick="filterByCard('expiry')"><div class="sidebar-icon">🕐</div><div class="sidebar-info"><div class="sidebar-label">效期品</div></div><div class="sidebar-val" id="sb-val-expiry">—</div></div>
     </div>
     <div class="table-area">
@@ -2080,11 +2095,18 @@ function renderTable(){
 }
 function updateStats(){
   const tot=records.length,pend=records.filter(function(r){return !r.reply;}).length,ov=records.filter(function(r){return isOverdue(r);}).length;
-  const tr=records.filter(function(r){return r.reply==='轉不良';}).length,ret=records.filter(function(r){return r.reply==='不良退';}).length,sw=records.filter(function(r){return r.reply==='不良換';}).length,mt=records.filter(function(r){return r.supplierName;}).length;
+  const tr=records.filter(function(r){return r.reply==='轉不良';}).length,ret=records.filter(function(r){return r.reply==='不良退';}).length,sw=records.filter(function(r){return r.reply==='不良換';}).length;
   const ex=records.filter(function(r){return r.isExpiry;}).length;
-  document.getElementById('st-total').textContent=tot;document.getElementById('st-pending').textContent=pend;document.getElementById('st-overdue').textContent=ov;
-  document.getElementById('st-trans').textContent=tr;document.getElementById('st-ret').textContent=ret;document.getElementById('st-swap').textContent=sw;document.getElementById('st-matched').textContent=mt;
-  var sm={all:tot,pending:pend,overdue:ov,trans:tr,ret:ret,swap:sw,matched:mt,expiry:ex};
+  // 更新儀表板數字
+  document.getElementById('st-total').textContent=tot;
+  document.getElementById('st-pending').textContent=pend;
+  document.getElementById('st-overdue').textContent=ov;
+  document.getElementById('st-trans').textContent=tr;
+  document.getElementById('st-ret').textContent=ret;
+  document.getElementById('st-swap').textContent=sw;
+  document.getElementById('st-expiry').textContent=ex;  // ← 效期品數量
+  // 更新側邊欄數字
+  var sm={all:tot,pending:pend,overdue:ov,trans:tr,ret:ret,swap:sw,expiry:ex};
   Object.keys(sm).forEach(function(k){var el=document.getElementById('sb-val-'+k);if(el)el.textContent=sm[k];});
   updateSupFilter();
 }
