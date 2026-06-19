@@ -202,8 +202,14 @@ body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;
 .toolbar select{padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;outline:none;}
 .toolbar-divider{width:1px;height:24px;background:var(--border);margin:0 2px;}
 .row-count{margin-left:auto;font-size:11px;color:var(--text3);white-space:nowrap;font-weight:500;}
-.table-wrap{flex:1;background:var(--surface);margin:12px;border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
-.table-scroll{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - var(--header-h) - 100px);}
+/* 填滿畫面：table-wrap 撐滿剩餘高度 */
+.table-wrap{flex:1;background:var(--surface);margin:12px;border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;}
+.table-scroll{overflow-x:auto;overflow-y:auto;flex:1;}
+/* 大分類顏色標籤 */
+.badge-cat-preorder{background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;}
+.badge-cat-food{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+.badge-cat-home{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;}
+.badge-cat-intl{background:#e0f2fe;color:#0c4a6e;border:1px solid #7dd3fc;}
 table{width:100%;border-collapse:collapse;}
 thead tr{background:var(--surface2);position:sticky;top:0;z-index:10;}
 th{padding:11px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;letter-spacing:.4px;text-transform:uppercase;background:var(--surface2);box-shadow:0 1px 0 var(--border);}
@@ -989,6 +995,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
       <div class="sidebar-item" id="sidebar-ret" onclick="filterByCard('ret')"><div class="sidebar-icon">↩️</div><div class="sidebar-info"><div class="sidebar-label">不良退</div></div><div class="sidebar-val" id="sb-val-ret">—</div></div>
       <div class="sidebar-item" id="sidebar-swap" onclick="filterByCard('swap')"><div class="sidebar-icon">🔁</div><div class="sidebar-info"><div class="sidebar-label">不良換</div></div><div class="sidebar-val" id="sb-val-swap">—</div></div>
       <div class="sidebar-item" id="sidebar-matched" onclick="filterByCard('matched')"><div class="sidebar-icon">✅</div><div class="sidebar-info"><div class="sidebar-label">帶入名稱</div></div><div class="sidebar-val" id="sb-val-matched">—</div></div>
+      <div class="sidebar-item" id="sidebar-expiry" onclick="filterByCard('expiry')"><div class="sidebar-icon">🕐</div><div class="sidebar-info"><div class="sidebar-label">效期品</div></div><div class="sidebar-val" id="sb-val-expiry">—</div></div>
     </div>
     <div class="table-area">
       <div class="toolbar">
@@ -1029,16 +1036,16 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
               <th style="width:86px" class="sortable sort-none" onclick="sortBy('sku')" id="th-sku">商品代號</th>
               <th class="sortable sort-none" onclick="sortBy('name')" id="th-name">品名</th>
               <th style="width:54px;text-align:right" class="sortable sort-none" onclick="sortBy('qty')" id="th-qty">庫存</th>
+              <th style="width:72px">效期品</th>
+              <th style="width:100px" class="sortable sort-none" onclick="sortBy('expiryDate')" id="th-expiryDate">效期日期</th>
               <th style="width:82px" class="sortable sort-none" onclick="sortBy('reply')" id="th-reply">商流回覆</th>
               <th style="width:112px">不良原因</th>
               <th style="width:100px" class="sortable sort-none" onclick="sortBy('date')" id="th-date">反映日期</th>
+              <th style="width:100px" class="sortable sort-none" onclick="sortBy('notifyDate')" id="th-notifyDate">發信通知日</th>
               <th style="width:110px" class="sortable sort-none" onclick="sortBy('returnDate')" id="th-returnDate">廠商收退日</th>
               <th style="width:134px">進度備註</th>
               <th style="width:70px">處理人員</th>
               <th style="width:88px" class="sortable sort-none" onclick="sortBy('updatedAt')" id="th-updatedAt">更新日期</th>
-              <th style="width:100px" class="sortable sort-none" onclick="sortBy('notifyDate')" id="th-notifyDate">發信通知日</th>
-              <th style="width:72px">效期品</th>
-              <th style="width:100px" class="sortable sort-none" onclick="sortBy('expiryDate')" id="th-expiryDate">效期日期</th>
               <th style="width:48px;position:sticky;right:0;background:var(--surface2);z-index:11;box-shadow:-2px 0 4px rgba(0,0,0,.06)"></th>
             </tr></thead>
             <tbody id="tbody"></tbody>
@@ -1307,24 +1314,43 @@ function updateSortHeaders(prefix, state) {
 }
 
 // ── 通用排序函式：對陣列依欄位與方向排序 ──
-function applySortToRows(rows, state) {
-  if (!state.field) return rows;
-  const f = state.field, dir = state.dir;
-  return [...rows].sort(function(a, b) {
-    let va = a[f] ?? '', vb = b[f] ?? '';
-    // 數字欄位（庫存）用數值比較
-    if (f === 'qty' || f === 'sn') {
-      va = Number(va) || 0;
-      vb = Number(vb) || 0;
-      return dir === 'asc' ? va - vb : vb - va;
+// 若無手動排序，套用預設優先順序：
+// 1. 有廠商收退日（由近到遠）
+// 2. 不良退（反映日期由舊到新）
+// 3. 不良換（反映日期由舊到新）
+// 4. 轉不良（反映日期由舊到新）
+// 5. 其餘
+function defaultPriority(r){
+  if(r.returnDate) return 0;         // 有廠商收退日最優先
+  if(r.reply==='不良退') return 1;
+  if(r.reply==='不良換') return 2;
+  if(r.reply==='轉不良') return 3;
+  return 4;
+}
+function applySortToRows(rows, state){
+  // 有手動排序：照欄位排
+  if(state.field){
+    const f=state.field, dir=state.dir;
+    return [...rows].sort(function(a,b){
+      let va=a[f]??'', vb=b[f]??'';
+      if(f==='qty'||f==='sn'){ va=Number(va)||0; vb=Number(vb)||0; return dir==='asc'?va-vb:vb-va; }
+      if(f==='date'||f==='returnDate'||f==='updatedAt'||f==='notifyDate'||f==='expiryDate'){ va=va||'zzzz'; vb=vb||'zzzz'; }
+      const cmp=String(va).localeCompare(String(vb),'zh-TW',{numeric:true});
+      return dir==='asc'?cmp:-cmp;
+    });
+  }
+  // 無手動排序：套用預設優先順序
+  return [...rows].sort(function(a,b){
+    const pa=defaultPriority(a), pb=defaultPriority(b);
+    if(pa!==pb) return pa-pb;
+    // 同優先級：有廠商收退日的由近到遠
+    if(pa===0){
+      const da=a.returnDate||'9999', db=b.returnDate||'9999';
+      return da.localeCompare(db);
     }
-    // 日期欄位轉為可比較字串（空值排後面）
-    if (f === 'date' || f === 'returnDate' || f === 'updatedAt') {
-      va = va || 'zzzz'; // 空值排到最後
-      vb = vb || 'zzzz';
-    }
-    const cmp = String(va).localeCompare(String(vb), 'zh-TW', { numeric: true });
-    return dir === 'asc' ? cmp : -cmp;
+    // 其餘：反映日期由舊到新（空值排後面）
+    const da=a.date||'9999', db=b.date||'9999';
+    return da.localeCompare(db);
   });
 }
 
@@ -2016,34 +2042,45 @@ function renderTable(){
       retHtml=r.returnDate+pill;
     }
     const snHtml=r.supplierName?r.supplierName:'<span style="color:var(--text3)">—</span>';
+    // 大分類顏色對應
+    function catBadge(cat){
+      if(!cat) return '';
+      const map={'預購':'badge-cat-preorder','食品':'badge-cat-food','居家/美妝':'badge-cat-home','國際線/其它':'badge-cat-intl'};
+      const cls=map[cat]||'badge-gray';
+      return '<span class="badge '+cls+'">'+cat+'</span>';
+    }
+    // 效期品欄位 HTML
+    function expiryCell(r){
+      if(!r.isExpiry) return '<td style="text-align:center;color:var(--text3)">—</td><td>—</td>';
+      if(!r.expiryDate) return '<td style="text-align:center"><span class="expiry-warn">效期品</span></td><td style="color:var(--coral)">未填</td>';
+      const d=daysUntil(r.expiryDate);
+      let pill;
+      if(d<0) pill='<span class="expiry-over">已過期</span>';
+      else if(d<=7) pill='<span class="expiry-crit">D-'+d+'</span>';
+      else if(d<=30) pill='<span class="expiry-warn">D-'+d+'</span>';
+      else if(d<=60) pill='<span class="expiry-ok">D-'+d+'</span>';
+      else pill='<span class="badge badge-gray" style="font-size:10px">D-'+d+'</span>';
+      return '<td style="text-align:center"><span class="expiry-ok">✓</span></td><td style="font-size:12px;white-space:nowrap">'+r.expiryDate+' '+pill+'</td>';
+    }
     return '<tr class="'+odClass+'" onclick="handleRowClick(event,'+ri+')" style="cursor:pointer">'+
       '<td class="td-check"><input type="checkbox" class="row-check" data-idx="'+ri+'" onchange="onRowCheck(this)"></td>'+
-      '<td class="row-num">'+r.sn+'</td><td class="mono">'+r.sup+'</td>'+
-      '<td style="font-size:12px">'+snHtml+'</td><td class="mono">'+r.loc+'</td>'+
-      '<td>'+(r.cat?'<span class="badge badge-gray">'+r.cat+'</span>':'')+'</td>'+
+      '<td class="row-num">'+r.sn+'</td>'+
+      '<td class="mono">'+r.sup+'</td>'+
+      '<td style="font-size:12px">'+snHtml+'</td>'+
+      '<td class="mono">'+r.loc+'</td>'+
+      '<td>'+catBadge(r.cat)+'</td>'+
       '<td class="mono">'+r.sku+'</td>'+
       '<td class="cell-clip" style="max-width:200px" title="'+r.name+'">'+r.name+'</td>'+
       '<td style="text-align:right;font-weight:600;'+(r.qty<0?'color:var(--coral)':'')+'">'+r.qty+'</td>'+
+      expiryCell(r)+
       '<td>'+replyBadge(r.reply)+'</td>'+
       '<td class="cell-clip" style="max-width:110px;color:var(--text2)">'+(r.reason||'—')+'</td>'+
       '<td style="white-space:nowrap;font-size:12px">'+dateHtml+'</td>'+
+      '<td style="font-size:11px;color:var(--text2)">'+(r.notifyDate||'—')+'</td>'+
       '<td style="white-space:nowrap;font-size:12px">'+retHtml+'</td>'+
       '<td class="cell-clip" style="max-width:130px;color:var(--text2)">'+(r.note||'—')+'</td>'+
       '<td style="font-size:12px">'+(r.handler||'—')+'</td>'+
       '<td style="font-size:11px;color:var(--text3)">'+(r.updatedAt||'—')+'</td>'+
-      '<td style="font-size:11px;color:var(--text2)">'+(r.notifyDate||'—')+'</td>'+
-      (function(){
-        if(!r.isExpiry) return '<td style="text-align:center">—</td><td>—</td>';
-        const d=daysUntil(r.expiryDate);
-        let pill;
-        if(!r.expiryDate) return '<td style="text-align:center"><span class="expiry-warn">效期品</span></td><td style="color:var(--coral)">未填</td>';
-        if(d<0) pill='<span class="expiry-over">已過期</span>';
-        else if(d<=7) pill='<span class="expiry-crit">D-'+d+'</span>';
-        else if(d<=30) pill='<span class="expiry-warn">D-'+d+'</span>';
-        else if(d<=60) pill='<span class="expiry-ok">D-'+d+'</span>';
-        else pill='<span class="badge-gray badge" style="font-size:10px">D-'+d+'</span>';
-        return '<td style="text-align:center"><span class="expiry-ok">✓</span></td><td style="font-size:12px;white-space:nowrap">'+r.expiryDate+' '+pill+'</td>';
-      })()+
       '<td style="position:sticky;right:0;background:var(--surface);box-shadow:-2px 0 4px rgba(0,0,0,.06)"><button class="btn btn-sm" onclick="openEdit('+ri+')">編輯</button></td>'+
       '</tr>';
   }).join('');
@@ -2052,9 +2089,10 @@ function renderTable(){
 function updateStats(){
   const tot=records.length,pend=records.filter(function(r){return !r.reply;}).length,ov=records.filter(function(r){return isOverdue(r);}).length;
   const tr=records.filter(function(r){return r.reply==='轉不良';}).length,ret=records.filter(function(r){return r.reply==='不良退';}).length,sw=records.filter(function(r){return r.reply==='不良換';}).length,mt=records.filter(function(r){return r.supplierName;}).length;
+  const ex=records.filter(function(r){return r.isExpiry;}).length;
   document.getElementById('st-total').textContent=tot;document.getElementById('st-pending').textContent=pend;document.getElementById('st-overdue').textContent=ov;
   document.getElementById('st-trans').textContent=tr;document.getElementById('st-ret').textContent=ret;document.getElementById('st-swap').textContent=sw;document.getElementById('st-matched').textContent=mt;
-  var sm={all:tot,pending:pend,overdue:ov,trans:tr,ret:ret,swap:sw,matched:mt};
+  var sm={all:tot,pending:pend,overdue:ov,trans:tr,ret:ret,swap:sw,matched:mt,expiry:ex};
   Object.keys(sm).forEach(function(k){var el=document.getElementById('sb-val-'+k);if(el)el.textContent=sm[k];});
   updateSupFilter();
 }
