@@ -164,22 +164,19 @@ body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;
 /* ═══════════════════════════
    Main layout
 ═══════════════════════════ */
-/* ── 主容器：header 以下全部空間 ── */
+/* ── 主容器 ── */
 .main{
   margin-top:var(--header-h);
-  display:flex;
-  flex-direction:column;
+  display:block;
   min-height:calc(100vh - var(--header-h));
 }
 
-/* ── 儀表板：靠頂排列，高度由內容決定 ── */
+/* ── 儀表板 ── */
 #dashboard-view{
   display:none;
   width:100%;
   padding:20px 16px;
-  overflow-y:auto;
-  /* 關鍵：不用 flex:1，讓高度由內容撐開 */
-  flex-shrink:0;
+  box-sizing:border-box;
 }
 .dash-cards{
   display:grid;
@@ -225,7 +222,7 @@ body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;
 .card-trans{border-left:4px solid var(--blue);}.card-trans .stat-card-val{color:var(--blue);}
 .card-ret{border-left:4px solid #ef4444;}.card-ret .stat-card-val{color:var(--coral);}
 .card-swap{border-left:4px solid var(--teal);}.card-swap .stat-card-val{color:var(--teal);}
-#table-view{flex:1;display:none;flex-direction:row;}
+#table-view{display:none;flex-direction:row;width:100%;height:calc(100vh - var(--header-h));}
 #sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:12px 0;display:none;flex-direction:column;gap:2px;overflow-y:auto;transition:width .2s;}
 #sidebar.collapsed{width:52px;}
 #sidebar.collapsed .sidebar-info,#sidebar.collapsed .sidebar-val{display:none;}
@@ -1040,7 +1037,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
     </div>
   </div>
 
-  <div id="table-view" style="flex:1;display:none;flex-direction:row;">
+  <div id="table-view" style="display:none;flex-direction:row;">
     <div id="sidebar" style="display:none">
       <div class="sidebar-toggle" onclick="toggleSidebar()">
         <span class="sidebar-toggle-label">分類篩選</span><span class="sidebar-toggle-icon">◀</span>
