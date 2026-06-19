@@ -754,7 +754,13 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
       <button class="btn btn-dark" onclick="doTransfer()">🔄 轉入已廠退資料庫</button>
     </div>
   </div>
-</div><div class="spinner"></div><div class="loading-text" id="loading-text">載入資料中...</div></div>
+</div>
+
+<!-- 載入遮罩 -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">載入資料中...</div>
+</div>
 <div class="toast" id="toast"></div>
 
 <div class="notif-overlay" id="notif-overlay">
