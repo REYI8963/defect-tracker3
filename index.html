@@ -2,8 +2,14 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>廠退追蹤系統</title>
+<!-- PWA / iOS 主畫面 App 設定 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="廠退追蹤">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#D94F2B">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
@@ -159,10 +165,14 @@ body{font-family:'Helvetica Neue','PingFang TC','Microsoft JhengHei',sans-serif;
    Main layout
 ═══════════════════════════ */
 .main{margin-top:var(--header-h);display:flex;min-height:calc(100vh - var(--header-h));}
-#dashboard-view{flex:1;display:none;align-items:center;justify-content:center;padding:32px 24px;}
-.dash-cards{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;width:100%;max-width:1200px;}
-@media(max-width:900px){.dash-cards{grid-template-columns:repeat(4,1fr);}}
-@media(max-width:600px){.dash-cards{grid-template-columns:repeat(2,1fr);}}
+#dashboard-view{flex:1;display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
+.dash-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:1200px;}
+@media(min-width:1100px){.dash-cards{grid-template-columns:repeat(8,1fr);}}
+@media(max-width:600px){
+  /* 手機：2欄，填滿畫面不留白 */
+  #dashboard-view{padding:12px 10px;align-items:flex-start;justify-content:flex-start;}
+  .dash-cards{grid-template-columns:repeat(2,1fr);gap:8px;width:100%;}
+}
 .stat-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px 18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:transform .18s,box-shadow .18s;}
 .stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);}
 .stat-card.active{outline:2.5px solid #1a1917;outline-offset:2px;}
@@ -425,18 +435,20 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
   font-weight:500; width:fit-content;
 }
 
-/* ── 底部快速導覽（手機專用） ── */
+/* ── 底部快速導覽（手機專用）── */
 .mobile-bottom-nav{
   display:none; position:fixed; bottom:0; left:0; right:0;
   background:var(--surface); border-top:1px solid var(--border);
-  z-index:90; padding:0 4px env(safe-area-inset-bottom,0);
+  z-index:90;
+  padding:0 4px;
+  padding-bottom:env(safe-area-inset-bottom, 0px);
   box-shadow:0 -2px 12px rgba(0,0,0,.08);
 }
 @media(max-width:768px){
   .mobile-bottom-nav{ display:flex; }
-  /* 底部導覽列高度補償 */
-  .main{ padding-bottom:64px; }
-  .batch-bar{ bottom:76px; } /* 批次列在底部導覽之上 */
+  /* 底部導覽列高度補償（含 iPhone 安全區域）*/
+  .main{ padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .batch-bar{ bottom:calc(76px + env(safe-area-inset-bottom, 0px)); }
 }
 .mob-nav-btn{
   flex:1; display:flex; flex-direction:column;
@@ -452,8 +464,6 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 
 /* ── 手機版儀表板卡片 ── */
 @media(max-width:768px){
-  #dashboard-view{ padding:16px 12px 12px; align-items:flex-start; }
-  .dash-cards{ grid-template-columns:repeat(2,1fr); gap:10px; max-width:100%; }
   .stat-card{ padding:14px 12px; }
   .stat-card-val{ font-size:28px; }
   .stat-card-label{ font-size:12px; }
@@ -979,6 +989,10 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
       <div class="stat-card card-matched" onclick="showTable('matched')" id="card-matched">
         <div class="stat-card-icon">✅</div><div class="stat-card-val" id="st-matched">—</div>
         <div class="stat-card-label">已帶入名稱</div><div class="stat-card-sub">有供應商名稱</div>
+      </div>
+      <div class="stat-card" onclick="showTable('expiry')" id="card-expiry" style="border-left:4px solid #8b5cf6">
+        <div class="stat-card-icon">🕐</div><div class="stat-card-val" id="st-expiry" style="color:#7c3aed">—</div>
+        <div class="stat-card-label">效期品</div><div class="stat-card-sub">已標記效期品項</div>
       </div>
     </div>
   </div>
@@ -1698,36 +1712,18 @@ function lookupSupplierName(sup) {
 }
 
 // ══════════════════════════════════════
-// 帳號系統（三層權限）
-// admin    = 超級管理員，看全部倉、可建帳號、可刪除
-// manager  = 倉管主管，本倉全部權限（匯入/匯出/刪除/編輯）
-// staff    = 一般人員，可新增、可編輯追蹤清單、只能編輯自己新增的廠退紀錄
+// 帳號系統（無權限差異，所有帳號功能相同）
 // ══════════════════════════════════════
 const ACCOUNTS = {
-  // ── 超級管理員 ──
-  'NJWU09':   {password:'Aa123456', name:'管理員',    role:'admin',   color:'#f59e0b', whKey:null,     whLabel:null},
-  // ── 岡山倉 ──
-  'KAOLOG':   {password:'8963',     name:'岡山主管',  role:'manager', color:'#10b981', whKey:'kaolog', whLabel:'岡山倉'},
-  'KAOLOG2':  {password:'89633',    name:'岡山人員',  role:'staff',   color:'#10b981', whKey:'kaolog', whLabel:'岡山倉'},
-  // ── 大肚倉 ──
-  'DADU01':   {password:'1234',     name:'大肚主管',  role:'manager', color:'#3b82f6', whKey:'dadu01', whLabel:'大肚倉'},
-  'DADU02':   {password:'12344',    name:'大肚人員',  role:'staff',   color:'#3b82f6', whKey:'dadu01', whLabel:'大肚倉'},
+  'KAOLOG': {password:'8963', name:'岡山主管', role:'manager', color:'#10b981', whKey:'kaolog', whLabel:'岡山倉'},
+  'DADU01': {password:'1234', name:'大肚主管', role:'manager', color:'#3b82f6', whKey:'dadu01', whLabel:'大肚倉'},
 };
 
-// ── 權限判斷工具函式 ──
-// 是否可以匯入 Excel / 匯出 / 清空資料
-function canImport(){ return currentUser && (currentUser.role==='admin'||currentUser.role==='manager'); }
-// 是否可以刪除廠退紀錄
-function canDelete(){ return currentUser && (currentUser.role==='admin'||currentUser.role==='manager'); }
-// 是否可以編輯某筆廠退紀錄（staff 只能改自己建立的）
-function canEditReturn(r){
-  if(!currentUser) return false;
-  if(currentUser.role==='admin'||currentUser.role==='manager') return true;
-  // staff：createdBy 欄位須等於自己帳號
-  return r.createdBy === currentUser.id;
-}
-// 是否為管理員（可看後台）
-function isAdmin(){ return currentUser && currentUser.role==='admin'; }
+// ── 所有帳號皆有完整權限 ──
+function canImport(){ return !!currentUser; }
+function canDelete(){ return !!currentUser; }
+function canEditReturn(r){ return !!currentUser; }
+function isAdmin(){ return false; }
 
 let records=[], editIdx=null, currentUser=null, notifShown=false;
 let selectedIdx=new Set();
@@ -1801,36 +1797,14 @@ function doLogin(){
   document.getElementById('user-display').textContent=acc.name;
   // 顯示倉別徽章
   if(acc.whLabel){const wb=document.getElementById('wh-badge');wb.textContent=acc.whLabel;wb.style.display='';wb.style.background=acc.color+'22';wb.style.color=acc.color;}
-  // 依角色顯示對應 UI
-  if(acc.role==='admin'){
-    showAdminView();
-  } else {
-    document.getElementById('header-actions').style.display='flex';
-    applyPermissionUI(); // 依權限顯示/隱藏按鈕
-    showMobileUI();
-    loadData();
-  }
+  // 所有帳號都有完整功能
+  document.getElementById('header-actions').style.display='flex';
+  showMobileUI();
+  loadData();
 }
 
-// ── 依權限控制按鈕顯示 ──
-// staff 看不到：匯入Excel、匯出、清空資料
-function applyPermissionUI(){
-  const isStaff = currentUser && currentUser.role==='staff';
-  // 桌面版按鈕
-  const importBtn = document.querySelector('#header-actions button[onclick*="file-input"]');
-  const exportBtn = document.querySelector('#header-actions button[onclick*="exportData"]');
-  const clearBtn  = document.querySelector('#header-actions button[onclick*="clearAllData"]');
-  if(importBtn) importBtn.style.display = isStaff ? 'none' : '';
-  if(exportBtn) exportBtn.style.display = isStaff ? 'none' : '';
-  if(clearBtn)  clearBtn.style.display  = isStaff ? 'none' : '';
-  // 手機抽屜按鈕
-  const drawerImport = document.querySelector('#mobile-drawer .drawer-btn[onclick*="file-input-mob"]');
-  const drawerExport = document.querySelector('#mobile-drawer .drawer-btn[onclick*="exportData"]');
-  const drawerClear  = document.querySelector('#mobile-drawer .drawer-btn[onclick*="clearAllData"]');
-  if(drawerImport) drawerImport.style.display = isStaff ? 'none' : '';
-  if(drawerExport) drawerExport.style.display = isStaff ? 'none' : '';
-  if(drawerClear)  drawerClear.style.display  = isStaff ? 'none' : '';
-}
+// ── 所有按鈕對所有帳號都顯示，無需隱藏 ──
+function applyPermissionUI(){ /* 無限制 */ }
 function doLogout(){
   currentUser=null;records=[];
   document.getElementById('login-screen').classList.remove('hidden');
@@ -1853,7 +1827,7 @@ function hideAllViews(){
   document.getElementById('admin-view').style.display='none';
   document.getElementById('sidebar').style.display='none';
 }
-function goHome(){if(!currentUser)return;if(currentUser.role==='admin')showAdminView();else showDashboard();}
+function goHome(){if(!currentUser)return;showDashboard();}
 function showDashboard(){hideAllViews();document.getElementById('dashboard-view').style.display='flex';}
 function showEmptyGuide(){
   hideAllViews();
