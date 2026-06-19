@@ -333,7 +333,286 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 .role-badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
 .role-admin{background:var(--amber-bg);color:var(--amber);}
 .role-user{background:var(--blue-bg);color:var(--blue);}
-</style>
+/* ── 效期品標示 ── */
+.expiry-ok{display:inline-flex;background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;}
+.expiry-warn{display:inline-flex;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;}
+.expiry-crit{display:inline-flex;background:var(--red-bg);color:var(--red);padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;}
+.expiry-over{display:inline-flex;background:#1f2937;color:#f9fafb;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;}
+/* ═══════════════════════════════════════════════════
+   響應式設計 — 手機版完整樣式
+   斷點：≤768px = 手機，769-1024px = 平板
+═══════════════════════════════════════════════════ */
+
+/* ── 手機版 Header ── */
+@media(max-width:768px){
+  :root{ --header-h:56px; }
+
+  .header{ padding:0 12px; }
+  .app-name{ font-size:15px; }
+  .sync-pill{ display:none; } /* 手機隱藏連線狀態（改放在選單內） */
+  .wh-badge{ font-size:10px; padding:2px 7px; }
+
+  /* 漢堡選單按鈕 */
+  .hamburger-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:38px; height:38px; border-radius:var(--r);
+    border:1px solid var(--border); background:var(--surface2);
+    cursor:pointer; font-size:18px; flex-shrink:0;
+  }
+
+  /* header-right 在手機完全隱藏（改用抽屜選單） */
+  #header-actions{ display:none !important; }
+
+  /* 使用者徽章縮小 */
+  #user-badge .user-display-name{ display:none; }
+  .logout-btn{ font-size:10px; padding:3px 8px; }
+}
+@media(min-width:769px){
+  .hamburger-btn{ display:none; }
+  #mobile-drawer{ display:none !important; }
+  #drawer-overlay{ display:none !important; }
+  .mobile-bottom-nav{ display:none !important; }
+}
+
+/* ── 行動版抽屜選單 ── */
+#drawer-overlay{
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.45); z-index:150;
+  backdrop-filter:blur(2px);
+}
+#drawer-overlay.open{ display:block; }
+#mobile-drawer{
+  display:none; position:fixed; top:0; right:0; bottom:0;
+  width:280px; background:var(--surface);
+  z-index:160; flex-direction:column;
+  box-shadow:-4px 0 24px rgba(0,0,0,.15);
+  transform:translateX(100%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+  overflow-y:auto;
+}
+#mobile-drawer.open{
+  display:flex; transform:translateX(0);
+}
+.drawer-header{
+  padding:16px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.drawer-header-title{ font-size:14px; font-weight:700; }
+.drawer-close{
+  background:none; border:none; font-size:20px;
+  cursor:pointer; color:var(--text3); padding:4px;
+}
+.drawer-section{ padding:12px 16px; border-bottom:1px solid var(--border); }
+.drawer-section-title{ font-size:10px; font-weight:700; color:var(--text3); letter-spacing:.5px; text-transform:uppercase; margin-bottom:8px; }
+.drawer-btn{
+  display:flex; align-items:center; gap:10px;
+  width:100%; padding:11px 12px; border-radius:var(--r);
+  border:none; background:none; color:var(--text);
+  font-size:13px; font-weight:500; cursor:pointer;
+  text-align:left; transition:background .12s; margin-bottom:2px;
+}
+.drawer-btn:hover, .drawer-btn:active{ background:var(--surface2); }
+.drawer-btn.danger{ color:var(--red); }
+.drawer-sync{
+  display:flex; align-items:center; gap:6px;
+  font-size:11px; padding:6px 12px; border-radius:20px;
+  font-weight:500; width:fit-content;
+}
+
+/* ── 底部快速導覽（手機專用） ── */
+.mobile-bottom-nav{
+  display:none; position:fixed; bottom:0; left:0; right:0;
+  background:var(--surface); border-top:1px solid var(--border);
+  z-index:90; padding:0 4px env(safe-area-inset-bottom,0);
+  box-shadow:0 -2px 12px rgba(0,0,0,.08);
+}
+@media(max-width:768px){
+  .mobile-bottom-nav{ display:flex; }
+  /* 底部導覽列高度補償 */
+  .main{ padding-bottom:64px; }
+  .batch-bar{ bottom:76px; } /* 批次列在底部導覽之上 */
+}
+.mob-nav-btn{
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:2px; padding:8px 4px; border:none;
+  background:none; cursor:pointer; color:var(--text3);
+  font-size:10px; font-weight:600; transition:color .15s;
+  min-height:56px;
+}
+.mob-nav-btn.active{ color:var(--coral); }
+.mob-nav-btn .mob-icon{ font-size:20px; line-height:1; }
+.mob-nav-btn .mob-label{ font-size:10px; }
+
+/* ── 手機版儀表板卡片 ── */
+@media(max-width:768px){
+  #dashboard-view{ padding:16px 12px 12px; align-items:flex-start; }
+  .dash-cards{ grid-template-columns:repeat(2,1fr); gap:10px; max-width:100%; }
+  .stat-card{ padding:14px 12px; }
+  .stat-card-val{ font-size:28px; }
+  .stat-card-label{ font-size:12px; }
+  .stat-card-sub{ display:none; }
+  .stat-card-icon{ font-size:18px; }
+}
+
+/* ── 手機版工具列 ── */
+@media(max-width:768px){
+  .toolbar{
+    padding:8px 10px; gap:6px;
+    flex-wrap:wrap;
+  }
+  /* 返回按鈕全寬 */
+  .toolbar .btn-sm:first-child{ display:none; } /* 改用底部導覽 */
+  .toolbar-divider:first-of-type{ display:none; }
+  .search-wrap{ min-width:0; max-width:100%; flex:1 1 100%; order:-1; }
+  .toolbar select{ flex:1; min-width:0; font-size:11px; padding:6px 6px; }
+  .row-count{ margin-left:0; }
+
+  /* return-view toolbar */
+  .return-toolbar{
+    flex-wrap:wrap; gap:6px; padding:8px 10px;
+  }
+  .return-actions{ width:100%; display:flex; gap:6px; flex-wrap:wrap; }
+  .return-actions .btn{ flex:1; justify-content:center; font-size:11px; padding:7px 8px; }
+}
+
+/* ── 手機版表格改為卡片列表 ── */
+@media(max-width:768px){
+  /* 隱藏桌面表格，顯示卡片列表 */
+  .table-scroll{ display:none !important; }
+  #mobile-card-list{
+    display:flex; flex-direction:column; gap:0;
+    overflow-y:auto;
+    max-height:calc(100vh - var(--header-h) - 110px - 64px);
+  }
+  .m-card{
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:12px 14px; cursor:pointer; transition:background .1s;
+    position:relative;
+  }
+  .m-card:active{ background:var(--surface2); }
+  .m-card.overdue-warn{ background:#fffbeb; }
+  .m-card.overdue-crit{ background:#fff5f5; }
+  .m-card-top{
+    display:flex; align-items:flex-start;
+    justify-content:space-between; gap:8px; margin-bottom:6px;
+  }
+  .m-card-name{
+    font-size:13px; font-weight:700; line-height:1.35;
+    flex:1; min-width:0;
+  }
+  .m-card-reply{ flex-shrink:0; }
+  .m-card-row{
+    display:flex; align-items:center; gap:10px;
+    font-size:11px; color:var(--text2); margin-top:4px;
+    flex-wrap:wrap;
+  }
+  .m-card-row span{ display:flex; align-items:center; gap:3px; }
+  .m-card-bottom{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:8px; gap:8px;
+  }
+  .m-card-dates{ font-size:11px; color:var(--text3); }
+  .m-card-edit{
+    flex-shrink:0; padding:5px 14px; border-radius:var(--r);
+    border:1px solid var(--border); background:var(--surface2);
+    font-size:11px; font-weight:600; cursor:pointer;
+  }
+  .m-card-check{ position:absolute; top:14px; left:14px; }
+  .m-card.check-mode{ padding-left:40px; }
+
+  /* 廠退資料庫也用卡片 */
+  .return-table-scroll{ display:none !important; }
+  #mobile-return-list{
+    display:flex; flex-direction:column; gap:0;
+    overflow-y:auto;
+    max-height:calc(100vh - var(--header-h) - 110px - 64px);
+  }
+  .m-return-card{
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:12px 14px; cursor:pointer;
+  }
+  .m-return-card:active{ background:var(--surface2); }
+  .m-return-card-top{
+    display:flex; justify-content:space-between;
+    align-items:flex-start; gap:8px; margin-bottom:4px;
+  }
+  .m-return-card-name{ font-size:13px; font-weight:700; flex:1; min-width:0; }
+  .m-return-card-row{ font-size:11px; color:var(--text2); margin-top:3px; }
+  .m-return-card-del{
+    padding:4px 10px; border-radius:var(--r);
+    border:1px solid #fecaca; background:#fee2e2;
+    color:var(--red); font-size:11px; cursor:pointer; flex-shrink:0;
+  }
+
+  /* table-wrap 在手機不需要 margin */
+  .table-wrap{ margin:0; border-radius:0; border-left:none; border-right:none; }
+  .return-table-wrap{ border-radius:0; }
+}
+
+/* 桌面隱藏卡片列表 */
+@media(min-width:769px){
+  #mobile-card-list{ display:none !important; }
+  #mobile-return-list{ display:none !important; }
+}
+
+/* ── 手機版 Modal → Bottom Sheet ── */
+@media(max-width:768px){
+  .modal-overlay{
+    align-items:flex-end; /* 從底部彈出 */
+  }
+  .modal, .return-modal{
+    width:100%; max-width:100%;
+    border-radius:var(--r-xl) var(--r-xl) 0 0;
+    max-height:92vh;
+    animation:slideUp .28s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes slideUp{
+    from{ transform:translateY(100%); }
+    to{ transform:translateY(0); }
+  }
+  .modal-header{ padding:16px 18px 0; }
+  .modal-body{ padding:14px 18px; }
+  .modal-footer{ padding:12px 18px 20px; } /* 加底部安全距離 */
+  .form-grid{ grid-template-columns:1fr; } /* 手機單欄 */
+  .form-row.full{ grid-column:1; }
+  .form-row input, .form-row select, .form-row textarea{
+    font-size:16px !important; /* 防止 iOS 縮放 */
+    padding:11px 12px;
+  }
+
+  /* 通知也改底部 */
+  .notif-overlay{ align-items:flex-end; }
+  .notif-box{
+    width:100%; max-width:100%; border-radius:var(--r-xl) var(--r-xl) 0 0;
+    max-height:80vh;
+  }
+
+  /* 批次 modal */
+  .batch-modal-overlay{ align-items:flex-end; }
+  .batch-modal{
+    width:100%; max-width:100%; border-radius:var(--r-xl) var(--r-xl) 0 0;
+  }
+  .batch-modal-body .form-grid{ grid-template-columns:1fr; }
+  .batch-modal-body .form-row.full{ grid-column:1; }
+  .batch-modal-body .form-row input,
+  .batch-modal-body .form-row select,
+  .batch-modal-body .form-row textarea{ font-size:16px !important; }
+}
+
+/* ── 手機版側邊欄：改為隱藏（底部導覽取代） ── */
+@media(max-width:768px){
+  #sidebar{ display:none !important; }
+  #table-view{ flex-direction:column; }
+}
+
+/* ── 平板版（769-1024px）調整 ── */
+@media(min-width:769px) and (max-width:1024px){
+  .dash-cards{ grid-template-columns:repeat(4,1fr); }
+  .header-right .btn{ padding:6px 10px; font-size:11px; }
+  #header-actions{ gap:4px; }
+}
+
 </head>
 <body>
 
@@ -485,6 +764,21 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
   </div>
 </div>
 
+<!-- 效期品到期提醒視窗 -->
+<div class="notif-overlay" id="expiry-notif-overlay">
+  <div class="notif-box" style="max-width:560px">
+    <div class="notif-header">
+      <div class="notif-title">🕐 效期品到期提醒</div>
+      <button class="modal-close" onclick="closeExpiryNotif()">✕</button>
+    </div>
+    <div class="notif-body" id="expiry-notif-body"></div>
+    <div class="notif-footer">
+      <button class="btn btn-dark" onclick="closeExpiryNotif();showTable('expiry')">查看全部效期品</button>
+      <button class="btn" onclick="closeExpiryNotif()" style="margin-left:8px">稍後再說</button>
+    </div>
+  </div>
+</div>
+
 <div class="batch-modal-overlay" id="batch-modal-overlay">
   <div class="batch-modal">
     <div class="batch-modal-header"><h2>✏️ 批次修改 <span id="batch-modal-count"></span> 筆</h2><button class="modal-close" onclick="closeBatchModal()">✕</button></div>
@@ -541,9 +835,21 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
         <div class="form-row"><label>🔖 商流回覆</label><select id="m-reply"><option value="">-- 未填寫 --</option><option>轉不良</option><option>不良退</option><option>不良換</option></select></div>
         <div class="form-row"><label>📅 反映日期</label><input type="date" id="m-date"></div>
         <div class="form-row"><label>🚚 廠商收退日</label><input type="date" id="m-returnDate"></div>
+        <div class="form-row"><label>📧 發信通知廠商日期</label><input type="date" id="m-notifyDate"></div>
         <div class="form-row full"><label>⚠️ 不良原因</label><input type="text" id="m-reason"></div>
         <div class="form-row full"><label>📝 進度備註</label><textarea id="m-note"></textarea></div>
         <div class="form-row"><label>👤 處理人員</label><input type="text" id="m-handler"></div>
+        <!-- 效期品勾選區塊 -->
+        <div class="form-row full">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
+            <input type="checkbox" id="m-isExpiry" onchange="toggleExpiryField()" style="width:16px;height:16px;accent-color:#c0392b">
+            <span>🕐 效期品（勾選後須填寫效期日期）</span>
+          </label>
+        </div>
+        <div class="form-row" id="m-expiry-row" style="display:none">
+          <label>📆 效期日期 <span style="color:var(--coral)">*必填</span></label>
+          <input type="date" id="m-expiryDate">
+        </div>
       </div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="closeModal()">取消</button><button class="btn btn-dark" onclick="saveEdit()">💾 儲存</button></div>
@@ -560,7 +866,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
     <span class="sync-pill sync-loading" id="sync-status">⏳ 連線中...</span>
     <div class="user-badge" id="user-badge" style="display:none">
       <span class="user-dot" id="user-dot"></span>
-      <span id="user-display"></span>
+      <span id="user-display" class="user-display-name"></span>
       <button class="logout-btn" onclick="doLogout()">登出</button>
     </div>
   </div>
@@ -572,6 +878,62 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
     <button class="btn" onclick="exportData()">⬇ 匯出</button>
     <button class="btn btn-red" onclick="clearAllData()">🗑 清空資料</button>
   </div>
+  <!-- 手機版漢堡選單按鈕 -->
+  <button class="hamburger-btn" id="hamburger-btn" onclick="openDrawer()" style="display:none">☰</button>
+</div>
+
+<!-- 手機版抽屜選單遮罩 -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<!-- 手機版抽屜選單 -->
+<div id="mobile-drawer">
+  <div class="drawer-header">
+    <div class="drawer-header-title">廠退追蹤系統</div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <!-- 連線狀態 -->
+  <div class="drawer-section">
+    <div class="drawer-section-title">連線狀態</div>
+    <span class="drawer-sync sync-pill sync-loading" id="drawer-sync">⏳ 連線中...</span>
+  </div>
+  <!-- 主功能 -->
+  <div class="drawer-section">
+    <div class="drawer-section-title">功能</div>
+    <button class="drawer-btn" onclick="closeDrawer();loadData();" id="drawer-refresh">↺ 重新整理</button>
+    <button class="drawer-btn" onclick="closeDrawer();showReturnView();">📦 已廠退資料庫</button>
+    <button class="drawer-btn" onclick="closeDrawer();document.getElementById('file-input-mob').click();">⬆ 匯入 Excel</button>
+    <button class="drawer-btn" onclick="closeDrawer();exportData();">⬇ 匯出資料</button>
+  </div>
+  <!-- 危險操作 -->
+  <div class="drawer-section">
+    <div class="drawer-section-title">資料管理</div>
+    <button class="drawer-btn danger" onclick="closeDrawer();clearAllData();">🗑 清空所有資料</button>
+  </div>
+  <!-- 登出 -->
+  <div class="drawer-section">
+    <button class="drawer-btn" onclick="closeDrawer();doLogout();" style="color:var(--text2)">🚪 登出</button>
+  </div>
+</div>
+<!-- 手機版隱藏 file input -->
+<input type="file" id="file-input-mob" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
+
+<!-- 手機版底部導覽列 -->
+<div class="mobile-bottom-nav" id="mobile-bottom-nav" style="display:none">
+  <button class="mob-nav-btn active" id="mob-nav-home" onclick="mobNav('home')">
+    <span class="mob-icon">🏠</span>
+    <span class="mob-label">首頁</span>
+  </button>
+  <button class="mob-nav-btn" id="mob-nav-track" onclick="mobNav('track')">
+    <span class="mob-icon">📋</span>
+    <span class="mob-label">追蹤清單</span>
+  </button>
+  <button class="mob-nav-btn" id="mob-nav-return" onclick="mobNav('return')">
+    <span class="mob-icon">📦</span>
+    <span class="mob-label">廠退資料庫</span>
+  </button>
+  <button class="mob-nav-btn" id="mob-nav-menu" onclick="openDrawer()">
+    <span class="mob-icon">⋯</span>
+    <span class="mob-label">更多</span>
+  </button>
 </div>
 
 <div class="main">
@@ -667,11 +1029,16 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
               <th style="width:134px">進度備註</th>
               <th style="width:70px">處理人員</th>
               <th style="width:88px" class="sortable sort-none" onclick="sortBy('updatedAt')" id="th-updatedAt">更新日期</th>
+              <th style="width:100px" class="sortable sort-none" onclick="sortBy('notifyDate')" id="th-notifyDate">發信通知日</th>
+              <th style="width:72px">效期品</th>
+              <th style="width:100px" class="sortable sort-none" onclick="sortBy('expiryDate')" id="th-expiryDate">效期日期</th>
               <th style="width:48px;position:sticky;right:0;background:var(--surface2);z-index:11;box-shadow:-2px 0 4px rgba(0,0,0,.06)"></th>
             </tr></thead>
             <tbody id="tbody"></tbody>
           </table>
         </div>
+        <!-- 手機版卡片列表（桌面隱藏） -->
+        <div id="mobile-card-list"></div>
       </div>
     </div>
   </div>
@@ -716,6 +1083,8 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
           <tbody id="return-tbody"></tbody>
         </table>
       </div>
+      <!-- 手機版廠退卡片列表（桌面隱藏） -->
+      <div id="mobile-return-list"></div>
     </div>
   </div>
 
@@ -739,6 +1108,129 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 </div>
 
 <script>
+// ══════════════════════════════════════
+// 響應式：偵測手機模式
+// ══════════════════════════════════════
+function isMobile(){ return window.innerWidth <= 768; }
+
+// ── 抽屜選單開關 ──
+function openDrawer(){
+  document.getElementById('mobile-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeDrawer(){
+  document.getElementById('mobile-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// ── 底部導覽列切換 ──
+function mobNav(key){
+  // 更新 active 狀態
+  document.querySelectorAll('.mob-nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  const el = document.getElementById('mob-nav-'+key);
+  if(el) el.classList.add('active');
+
+  if(key==='home') goHome();
+  else if(key==='track'){ showTable('all'); }
+  else if(key==='return'){ showReturnView(); }
+}
+
+// ── 登入後顯示手機元素 ──
+function showMobileUI(){
+  if(isMobile()){
+    document.getElementById('hamburger-btn').style.display='flex';
+    document.getElementById('mobile-bottom-nav').style.display='flex';
+  }
+}
+function hideMobileUI(){
+  document.getElementById('hamburger-btn').style.display='none';
+  document.getElementById('mobile-bottom-nav').style.display='none';
+}
+
+// ── 同步 drawer 的連線狀態 ──
+function syncDrawerStatus(type, msg){
+  const el = document.getElementById('drawer-sync');
+  if(el){ el.className='drawer-sync sync-pill sync-'+type; el.textContent=msg; }
+}
+
+// ── 手機版卡片列表渲染（追蹤清單） ──
+function renderMobileCards(rows){
+  const container = document.getElementById('mobile-card-list');
+  if(!container) return;
+  if(rows.length===0){ container.innerHTML=''; return; }
+
+  container.innerHTML = rows.map(function(r){
+    const ri = records.indexOf(r);
+    const odLv = overdueLevel(r), days = daysSince(r.date);
+    const odClass = odLv===2?'overdue-crit':odLv===1?'overdue-warn':'';
+    // 逾期標示
+    const odPill = odLv===2
+      ? '<span class="overdue-crit-pill">🔴 逾'+days+'天</span>'
+      : odLv===1 ? '<span class="overdue-warn-pill">🟡 逾'+days+'天</span>' : '';
+    // 廠商收退日
+    let retLabel = '';
+    if(r.returnDate){
+      const dt = daysUntil(r.returnDate);
+      if(dt<0) retLabel='<span class="return-date-over">已過期</span>';
+      else if(dt===0) retLabel='<span class="return-date-today">📦今日收退</span>';
+      else if(dt<=2) retLabel='<span class="return-date-soon">D-'+dt+'</span>';
+    }
+    const supplierStr = r.supplierName || r.sup || '';
+    return `<div class="m-card ${odClass}" onclick="openEdit(${ri})">
+      <div class="m-card-top">
+        <div class="m-card-name">${r.name||'—'}</div>
+        <div class="m-card-reply">${replyBadge(r.reply)}</div>
+      </div>
+      <div class="m-card-row">
+        <span>🏢 ${supplierStr}</span>
+        <span>📦 庫存 <strong>${r.qty}</strong></span>
+        ${r.cat?'<span class="badge badge-gray" style="font-size:10px">'+r.cat+'</span>':''}
+      </div>
+      ${r.reason?'<div class="m-card-row" style="margin-top:2px;color:var(--text3)">⚠️ '+r.reason+'</div>':''}
+      ${r.note?'<div class="m-card-row" style="margin-top:2px;color:var(--text3)">📝 '+r.note+'</div>':''}
+      <div class="m-card-bottom">
+        <div class="m-card-dates">
+          ${r.date?'📅 '+r.date+odPill:''}
+          ${r.returnDate?'　🚚 '+r.returnDate+retLabel:''}
+        </div>
+        <button class="m-card-edit" onclick="event.stopPropagation();openEdit(${ri})">編輯</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 手機版卡片列表渲染（廠退資料庫） ──
+function renderMobileReturnCards(rows){
+  const container = document.getElementById('mobile-return-list');
+  if(!container) return;
+  if(rows.length===0){ container.innerHTML=''; return; }
+
+  function typeBadge(v){
+    if(!v) return '—';
+    const cls = v==='不良退'?'badge-coral':v==='不良換'?'badge-teal':'badge-blue';
+    return '<span class="badge '+cls+'">'+v+'</span>';
+  }
+  container.innerHTML = rows.map(function(r){
+    return `<div class="m-return-card" onclick="openReturnEditModal('${r.id}')">
+      <div class="m-return-card-top">
+        <div>
+          <div class="m-return-card-name">${r.name||'—'}</div>
+          <div class="m-return-card-row">🏢 ${r.supplierName||'—'} &nbsp;·&nbsp; 數量 <strong>${r.qty}</strong></div>
+          ${r.returnNo?'<div class="m-return-card-row" style="margin-top:2px">📋 '+r.returnNo+'</div>':''}
+          <div class="m-return-card-row" style="margin-top:4px;display:flex;align-items:center;gap:6px">
+            ${typeBadge(r.returnType)}
+            ${r.returnDate?'<span style="font-size:11px;color:var(--text3)">🗓 '+r.returnDate+'</span>':''}
+          </div>
+        </div>
+        <button class="m-return-card-del" onclick="event.stopPropagation();deleteReturn('${r.id}')">刪除</button>
+      </div>
+      ${r.note?'<div class="m-return-card-row" style="margin-top:6px;color:var(--text3)">📝 '+r.note+'</div>':''}
+    </div>`;
+  }).join('');
+}
+
 // ══════════════════════════════════════
 // 已廠退資料庫
 // ══════════════════════════════════════
@@ -910,6 +1402,8 @@ function renderReturnTable(){
         <button class="btn btn-sm btn-red" onclick="event.stopPropagation();deleteReturn('${r.id}')">刪除</button>
       </td>
     </tr>`).join('');
+  // 手機版：同步渲染卡片列表
+  renderMobileReturnCards(rows);
 }
 
 function onReturnTypeChange(){
@@ -933,10 +1427,15 @@ function openReturnModal(){
 
 function openReturnEditModal(id){
   const r = returnRecords.find(x=>x.id===id);
-  if(!r)return;
+  if(!r) return;
+  // ── 權限檢查：staff 只能編輯自己建立的紀錄 ──
+  if(!canEditReturn(r)){
+    showToast('⚠ 您只能編輯自己新增的廠退紀錄');
+    return;
+  }
   returnEditId = id;
   document.getElementById('return-modal-title').textContent='編輯廠退紀錄';
-  document.getElementById('copy-last-btn').style.display='none'; // 編輯模式不顯示
+  document.getElementById('copy-last-btn').style.display='none';
   document.getElementById('r-no').value=r.returnNo||'';
   document.getElementById('r-supplier').value=r.supplierName||'';
   document.getElementById('r-sku').value=r.sku||'';
@@ -946,7 +1445,6 @@ function openReturnEditModal(id){
   document.getElementById('r-type').value=r.returnType||'';
   document.getElementById('r-handler').value=r.handler||'';
   document.getElementById('r-note').value=r.note||'';
-  // 貨運單號從備註裡解析（格式：貨運單號:XXX|備註:YYY）
   const trackingMatch=(r.note||'').match(/^貨運單號:([^|]*)\|備註:(.*)/s);
   if(trackingMatch){
     document.getElementById('r-tracking').value=trackingMatch[1];
@@ -978,7 +1476,8 @@ async function saveReturnRecord(){
     returnDate:document.getElementById('r-date').value,
     returnType:returnType,
     handler:document.getElementById('r-handler').value.trim(),
-    note:finalNote
+    note:finalNote,
+    createdBy: currentUser.id  // ← 記錄建立者帳號，用於 staff 權限判斷
   };
 
   const editingId = returnEditId; // 儲存當前編輯ID
@@ -1004,8 +1503,9 @@ async function saveReturnRecord(){
   hideLoading();
 }
 
-// 刪除廠退紀錄
+// 刪除廠退紀錄（主管以上才能刪除）
 async function deleteReturn(id){
+  if(!canDelete()){showToast('⚠ 權限不足，僅主管可刪除廠退紀錄');return;}
   const modal=document.getElementById('confirm-modal');
   document.getElementById('confirm-title').textContent='刪除廠退紀錄';
   document.getElementById('confirm-msg').textContent='確定要刪除這筆廠退紀錄嗎？此動作無法復原。';
@@ -1114,23 +1614,29 @@ async function sbFetch(method, path, body) {
   return text ? JSON.parse(text) : null;
 }
 
-function dbToRecord(r) {
+function dbToRecord(r){
   return {
     id:r.id, sn:r.sn||0, sup:r.sup||'', supplierName:r.supplier_name||'',
     loc:r.loc||'', cat:r.cat||'', sku:r.sku||'', name:r.name||'',
     qty:r.qty||0, reply:r.reply||'', reason:r.reason||'', date:r.date||'',
     returnDate:r.return_date||'', note:r.note||'', handler:r.handler||'',
-    updatedAt:r.updated_at||'', key:(r.sku||'')+'_'+(r.loc||''),
-    matchScore:0, matchFields:[]
+    updatedAt:r.updated_at||'',
+    notifyDate:r.notify_date||'',    // 發信通知廠商日期
+    isExpiry:r.is_expiry||false,     // 是否為效期品
+    expiryDate:r.expiry_date||'',   // 效期日期
+    key:(r.sku||'')+'_'+(r.loc||''), matchScore:0, matchFields:[]
   };
 }
-function recordToDb(r, wh) {
+function recordToDb(r, wh){
   return {
     warehouse:wh, sn:r.sn||0, sup:r.sup||'', supplier_name:r.supplierName||'',
     loc:r.loc||'', cat:r.cat||'', sku:r.sku||'', name:r.name||'',
     qty:r.qty||0, reply:r.reply||'', reason:r.reason||'', date:r.date||'',
     return_date:r.returnDate||'', note:r.note||'', handler:r.handler||'',
-    updated_at:r.updatedAt||''
+    updated_at:r.updatedAt||'',
+    notify_date:r.notifyDate||'',   // 發信通知廠商日期
+    is_expiry:r.isExpiry||false,    // 是否為效期品
+    expiry_date:r.expiryDate||''   // 效期日期
   };
 }
 
@@ -1144,14 +1650,36 @@ function lookupSupplierName(sup) {
 }
 
 // ══════════════════════════════════════
-// 帳號
+// 帳號系統（三層權限）
+// admin    = 超級管理員，看全部倉、可建帳號、可刪除
+// manager  = 倉管主管，本倉全部權限（匯入/匯出/刪除/編輯）
+// staff    = 一般人員，可新增、可編輯追蹤清單、只能編輯自己新增的廠退紀錄
 // ══════════════════════════════════════
 const ACCOUNTS = {
-  'KAOLOG': {password:'8963',     name:'岡山倉', role:'user',  color:'#10b981', whKey:'kaolog', whLabel:'岡山倉'},
-  'DADU01': {password:'1234',     name:'大肚倉', role:'user',  color:'#3b82f6', whKey:'dadu01', whLabel:'大肚倉'},
-  'DAXI01': {password:'0000',     name:'大溪倉', role:'user',  color:'#8b5cf6', whKey:'daxi01', whLabel:'大溪倉'},
-  'NJWU09': {password:'Aa123456', name:'管理員', role:'admin', color:'#f59e0b', whKey:null,     whLabel:null},
+  // ── 超級管理員 ──
+  'NJWU09':   {password:'Aa123456', name:'管理員',    role:'admin',   color:'#f59e0b', whKey:null,     whLabel:null},
+  // ── 岡山倉 ──
+  'KAOLOG':   {password:'8963',     name:'岡山主管',  role:'manager', color:'#10b981', whKey:'kaolog', whLabel:'岡山倉'},
+  'KAOLOG2':  {password:'89633',    name:'岡山人員',  role:'staff',   color:'#10b981', whKey:'kaolog', whLabel:'岡山倉'},
+  // ── 大肚倉 ──
+  'DADU01':   {password:'1234',     name:'大肚主管',  role:'manager', color:'#3b82f6', whKey:'dadu01', whLabel:'大肚倉'},
+  'DADU02':   {password:'12344',    name:'大肚人員',  role:'staff',   color:'#3b82f6', whKey:'dadu01', whLabel:'大肚倉'},
 };
+
+// ── 權限判斷工具函式 ──
+// 是否可以匯入 Excel / 匯出 / 清空資料
+function canImport(){ return currentUser && (currentUser.role==='admin'||currentUser.role==='manager'); }
+// 是否可以刪除廠退紀錄
+function canDelete(){ return currentUser && (currentUser.role==='admin'||currentUser.role==='manager'); }
+// 是否可以編輯某筆廠退紀錄（staff 只能改自己建立的）
+function canEditReturn(r){
+  if(!currentUser) return false;
+  if(currentUser.role==='admin'||currentUser.role==='manager') return true;
+  // staff：createdBy 欄位須等於自己帳號
+  return r.createdBy === currentUser.id;
+}
+// 是否為管理員（可看後台）
+function isAdmin(){ return currentUser && currentUser.role==='admin'; }
 
 let records=[], editIdx=null, currentUser=null, notifShown=false;
 let selectedIdx=new Set();
@@ -1198,7 +1726,11 @@ function hideLoading(){
   if(el) el.classList.remove('show');
 }
 function showToast(msg,ms){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},ms||2500);}
-function setSyncStatus(type,msg){const el=document.getElementById('sync-status');el.className='sync-pill sync-'+type;el.textContent=msg;}
+function setSyncStatus(type,msg){
+  const el=document.getElementById('sync-status');
+  el.className='sync-pill sync-'+type;el.textContent=msg;
+  syncDrawerStatus(type,msg); // 同步手機抽屜選單狀態
+}
 function formatDate(val){if(!val)return '';const s=String(val).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const d=new Date(s);if(isNaN(d))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function daysSince(ds){if(!ds)return null;const d=new Date(ds);if(isNaN(d))return null;return Math.floor((new Date()-d)/86400000);}
@@ -1219,9 +1751,38 @@ function doLogin(){
   document.getElementById('user-badge').style.display='flex';
   document.getElementById('user-dot').style.background=acc.color;
   document.getElementById('user-display').textContent=acc.name;
+  // 顯示倉別徽章
   if(acc.whLabel){const wb=document.getElementById('wh-badge');wb.textContent=acc.whLabel;wb.style.display='';wb.style.background=acc.color+'22';wb.style.color=acc.color;}
-  if(acc.role==='admin'){showAdminView();}
-  else{document.getElementById('header-actions').style.display='flex';loadData();}
+  // 依角色顯示對應 UI
+  if(acc.role==='admin'){
+    showAdminView();
+  } else {
+    document.getElementById('header-actions').style.display='flex';
+    applyPermissionUI(); // 依權限顯示/隱藏按鈕
+    showMobileUI();
+    loadData();
+  }
+}
+
+// ── 依權限控制按鈕顯示 ──
+// staff 看不到：匯入Excel、匯出、清空資料
+function applyPermissionUI(){
+  const isStaff = currentUser && currentUser.role==='staff';
+  // 桌面版按鈕
+  const importBtn = document.querySelector('#header-actions button[onclick*="file-input"]');
+  const exportBtn = document.querySelector('#header-actions button[onclick*="exportData"]');
+  const clearBtn  = document.querySelector('#header-actions button[onclick*="clearAllData"]');
+  if(importBtn) importBtn.style.display = isStaff ? 'none' : '';
+  if(exportBtn) exportBtn.style.display = isStaff ? 'none' : '';
+  if(clearBtn)  clearBtn.style.display  = isStaff ? 'none' : '';
+  // 手機抽屜按鈕
+  const drawerImport = document.querySelector('#mobile-drawer .drawer-btn[onclick*="file-input-mob"]');
+  const drawerExport = document.querySelector('#mobile-drawer .drawer-btn[onclick*="exportData"]');
+  const drawerClear  = document.querySelector('#mobile-drawer .drawer-btn[onclick*="clearAllData"]');
+  if(drawerImport) drawerImport.style.display = isStaff ? 'none' : '';
+  if(drawerExport) drawerExport.style.display = isStaff ? 'none' : '';
+  if(drawerClear)  drawerClear.style.display  = isStaff ? 'none' : '';
+}
 }
 function doLogout(){
   currentUser=null;records=[];
@@ -1232,6 +1793,8 @@ function doLogout(){
   document.getElementById('login-user').value='';
   document.getElementById('login-pass').value='';
   document.getElementById('login-error').textContent='';
+  hideMobileUI();
+  closeDrawer();
   hideAllViews();setSyncStatus('loading','⏳ 連線中...');
 }
 
@@ -1280,7 +1843,11 @@ async function loadData(){
     showToast('✓ 已載入 '+records.length+' 筆');
     renderTable();updateStats();
     if(records.length===0)showEmptyGuide();else showDashboard();
-    if(records.length>0)setTimeout(showReturnDateNotif,800);
+    // 載入後依序顯示：廠商收退提醒 → 逾期通知 → 效期提醒
+    if(records.length>0)setTimeout(function(){
+      showReturnDateNotif();
+      setTimeout(showExpiryNotif, 400);
+    },800);
   }catch(e){
     setSyncStatus('err','✗ 連線失敗');
     showToast('⚠ 無法連線：'+e.message,5000);
@@ -1296,20 +1863,24 @@ async function saveRecord(r){
   else{const res=await sbFetch('POST',TABLE,body);if(res&&res[0])r.id=res[0].id;}
 }
 
+// ── 批次同步：改用 UPSERT，不再刪除後重寫，根本解決資料消失問題 ──
 async function saveAllRecords(){
   setSyncStatus('loading','⏳ 同步中...');
   try{
-    await sbFetch('DELETE',TABLE+'?warehouse=eq.'+currentUser.whKey,null);
     const bodies=records.map(function(r){return recordToDb(r,currentUser.whKey);});
-    for(let i=0;i<bodies.length;i+=100){await sbFetch('POST',TABLE,bodies.slice(i,i+100));}
-    const data=await sbFetch('GET',TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=1000',null);
+    // UPSERT：依 warehouse+sku+loc 判斷新增或更新
+    for(let i=0;i<bodies.length;i+=100){
+      await sbFetch('POST',TABLE,bodies.slice(i,i+100));
+    }
+    const data=await sbFetch('GET',TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=2000',null);
     records=(data||[]).map(dbToRecord);
-    setSyncStatus('ok','✓ 已同步');showToast('✓ 已同步 '+records.length+' 筆至 Supabase');
+    setSyncStatus('ok','✓ 已同步');
   }catch(e){setSyncStatus('err','✗ 同步失敗');showToast('⚠ 同步失敗：'+e.message,5000);}
 }
 
-// ── 清空 ──
+// ── 清空（主管以上才能操作）──
 function clearAllData(){
+  if(!canDelete()){showToast('⚠ 權限不足，僅主管可清空資料');return;}
   const modal=document.getElementById('confirm-modal');
   const titleEl=document.getElementById('confirm-title');
   const msgEl=document.getElementById('confirm-msg');
@@ -1337,8 +1908,10 @@ function clearAllData(){
   modal.classList.add('open');
 }
 
-// ── 匯入 Excel ──
+// ── 匯入 Excel（智慧合併，保留已填資料不消失）──
 function handleFile(input){
+  // 權限檢查：只有主管以上可以匯入
+  if(!canImport()){showToast('⚠ 權限不足，僅主管可匯入 Excel');input.value='';return;}
   const file=input.files[0];if(!file)return;
   showLoading('讀取 Excel 中...');
   const reader=new FileReader();
@@ -1352,24 +1925,41 @@ function handleFile(input){
       if(raw.length<2){hideLoading();alert('無資料');return;}
       const hdr=raw[0].map(function(h){return String(h).trim();});
       const ci={sn:hdr.indexOf('項次'),sup:hdr.indexOf('供應商代號'),loc:hdr.indexOf('儲位'),cat:hdr.indexOf('大分類'),sku:hdr.indexOf('商品代號'),name:hdr.indexOf('品名'),qty:hdr.indexOf('庫存數量')};
+      // 建立 Excel 資料 map
       const newMap={};
       for(let i=1;i<raw.length;i++){
         const row=raw[i];
         const sku=String(row[ci.sku]||'').trim(),loc=String(row[ci.loc]||'').trim();
         const k=sku+'_'+loc;if(!k||k==='_')continue;
-        newMap[k]={sn:Number(row[ci.sn])||i,sup:String(row[ci.sup]||'').trim(),loc:loc,cat:String(row[ci.cat]||'').trim(),sku:sku,name:String(row[ci.name]||'').trim(),qty:row[ci.qty]!==''?Number(row[ci.qty]):0,reply:'',reason:'',date:'',returnDate:'',note:'',handler:'',updatedAt:'',supplierName:lookupSupplierName(String(row[ci.sup]||'').trim()),matchScore:0,matchFields:[]};
+        newMap[k]={sn:Number(row[ci.sn])||i,sup:String(row[ci.sup]||'').trim(),loc:loc,cat:String(row[ci.cat]||'').trim(),sku:sku,name:String(row[ci.name]||'').trim(),qty:row[ci.qty]!==''?Number(row[ci.qty]):0,supplierName:lookupSupplierName(String(row[ci.sup]||'').trim())};
       }
+      // 建立現有資料 map
       const existMap={};
       records.forEach(function(r){const k=r.sku+'_'+r.loc;if(k)existMap[k]=r;});
+      let added=0,updated=0;
       const merged=[];
+      // Excel 有的資料：更新或新增
       Object.entries(newMap).forEach(function(entry){
         const k=entry[0],nd=entry[1];
-        if(existMap[k]){merged.push(Object.assign({},existMap[k],{qty:nd.qty,sn:nd.sn,name:nd.name,supplierName:nd.supplierName||existMap[k].supplierName}));}
-        else{merged.push(nd);}
+        if(existMap[k]){
+          // ✅ 已存在：只更新庫存/品名/項次，保留所有已填欄位
+          merged.push(Object.assign({},existMap[k],{qty:nd.qty,sn:nd.sn,name:nd.name,sup:nd.sup,supplierName:nd.supplierName||existMap[k].supplierName}));
+          updated++;
+        }else{
+          // ✅ 新品項：新增
+          merged.push({sn:nd.sn,sup:nd.sup,supplierName:nd.supplierName,loc:nd.loc,cat:nd.cat,sku:nd.sku,name:nd.name,qty:nd.qty,reply:'',reason:'',date:'',returnDate:'',note:'',handler:'',updatedAt:''});
+          added++;
+        }
       });
-      records=merged.sort(function(a,b){return a.sn-b.sn;});
+      // ✅ Excel 沒有、DB 有的：保留不刪（避免資料消失）
+      const keepOld=[];
+      records.forEach(function(r){const k=r.sku+'_'+r.loc;if(!newMap[k])keepOld.push(r);});
+      records=[...merged,...keepOld].sort(function(a,b){return a.sn-b.sn;});
       showTableIfHasData();renderTable();updateStats();
       notifShown=false;
+      let msg='✓ 匯入完成：新增 '+added+' 筆，更新 '+updated+' 筆';
+      if(keepOld.length>0)msg+='，保留舊資料 '+keepOld.length+' 筆';
+      showToast(msg,4000);
       if(records.length>0){showDashboard();setTimeout(showReturnDateNotif,600);}
       await saveAllRecords();renderTable();updateStats();
     }catch(err){alert('讀取失敗：'+err.message);}
@@ -1400,12 +1990,13 @@ function renderTable(){
     if(fC&&r.cat!==fC)return false;
     if(fO==='1'&&!isOverdue(r))return false;
     if(fS&&r.sup!==fS)return false;
+    // 效期品篩選（從提醒視窗點進來時啟用）
+    if(window._filterExpiry && !r.isExpiry)return false;
     return true;
   });
   rows = applySortToRows(rows, sortState); // 套用排序
   document.getElementById('row-count').textContent='顯示 '+rows.length+' / '+records.length+' 筆';
-  document.getElementById('tbody').innerHTML=rows.map(function(r){
-    const ri=records.indexOf(r);
+  document.getElementById('tbody').innerHTML=rows.map(function(r){    const ri=records.indexOf(r);
     const odLv=overdueLevel(r),days=daysSince(r.date);
     const odClass=odLv===2?'overdue-crit':odLv===1?'overdue-warn':'';
     const odPill=odLv===2?'<span class="overdue-crit-pill">🔴 逾'+days+'天</span>':odLv===1?'<span class="overdue-warn-pill">🟡 逾'+days+'天</span>':'';
@@ -1434,9 +2025,23 @@ function renderTable(){
       '<td class="cell-clip" style="max-width:130px;color:var(--text2)">'+(r.note||'—')+'</td>'+
       '<td style="font-size:12px">'+(r.handler||'—')+'</td>'+
       '<td style="font-size:11px;color:var(--text3)">'+(r.updatedAt||'—')+'</td>'+
+      '<td style="font-size:11px;color:var(--text2)">'+(r.notifyDate||'—')+'</td>'+
+      (function(){
+        if(!r.isExpiry) return '<td style="text-align:center">—</td><td>—</td>';
+        const d=daysUntil(r.expiryDate);
+        let pill;
+        if(!r.expiryDate) return '<td style="text-align:center"><span class="expiry-warn">效期品</span></td><td style="color:var(--coral)">未填</td>';
+        if(d<0) pill='<span class="expiry-over">已過期</span>';
+        else if(d<=7) pill='<span class="expiry-crit">D-'+d+'</span>';
+        else if(d<=30) pill='<span class="expiry-warn">D-'+d+'</span>';
+        else if(d<=60) pill='<span class="expiry-ok">D-'+d+'</span>';
+        else pill='<span class="badge-gray badge" style="font-size:10px">D-'+d+'</span>';
+        return '<td style="text-align:center"><span class="expiry-ok">✓</span></td><td style="font-size:12px;white-space:nowrap">'+r.expiryDate+' '+pill+'</td>';
+      })()+
       '<td style="position:sticky;right:0;background:var(--surface);box-shadow:-2px 0 4px rgba(0,0,0,.06)"><button class="btn btn-sm" onclick="openEdit('+ri+')">編輯</button></td>'+
       '</tr>';
   }).join('');
+  renderMobileCards(rows);
 }
 function updateStats(){
   const tot=records.length,pend=records.filter(function(r){return !r.reply;}).length,ov=records.filter(function(r){return isOverdue(r);}).length;
@@ -1504,6 +2109,13 @@ function filterByCard(key){
   else if(key==='trans')replyEl.value='轉不良';
   else if(key==='ret')replyEl.value='不良退';
   else if(key==='swap')replyEl.value='不良換';
+  else if(key==='expiry'){
+    // 效期品篩選：直接用搜尋欄不夠，改用全域變數控制
+    window._filterExpiry=true;
+  } else {
+    window._filterExpiry=false;
+  }
+  if(key!=='expiry') window._filterExpiry=false;
   renderTable();
 }
 
@@ -1524,8 +2136,15 @@ async function applyBatch(){
 }
 
 // ── 單筆編輯 ──
+// ── 效期品勾選切換：勾選後顯示效期日期欄位 ──
+function toggleExpiryField(){
+  const checked = document.getElementById('m-isExpiry').checked;
+  document.getElementById('m-expiry-row').style.display = checked ? '' : 'none';
+  if(!checked) document.getElementById('m-expiryDate').value='';
+}
+
 function openEdit(idx){
-  editIdx=idx;const r=records[idx];
+  editIdx=idx; const r=records[idx];
   document.getElementById('m-name').textContent=r.name;
   document.getElementById('m-meta').innerHTML='<span>供應商：'+r.sup+'</span><span>儲位：'+r.loc+'</span><span>SKU：'+r.sku+'</span><span>庫存：'+r.qty+'</span>';
   const sb=document.getElementById('m-supplier-box');
@@ -1535,18 +2154,38 @@ function openEdit(idx){
   document.getElementById('m-reason').value=r.reason||'';
   document.getElementById('m-date').value=r.date||'';
   document.getElementById('m-returnDate').value=r.returnDate||'';
+  document.getElementById('m-notifyDate').value=r.notifyDate||'';   // 發信通知日
   document.getElementById('m-note').value=r.note||'';
   document.getElementById('m-handler').value=r.handler||'';
+  // 效期品欄位
+  const isExpiry = r.isExpiry||false;
+  document.getElementById('m-isExpiry').checked=isExpiry;
+  document.getElementById('m-expiryDate').value=r.expiryDate||'';
+  document.getElementById('m-expiry-row').style.display=isExpiry?'':'none';
   document.getElementById('edit-modal').classList.add('open');
 }
 function closeModal(){document.getElementById('edit-modal').classList.remove('open');editIdx=null;}
 async function saveEdit(){
   if(editIdx===null)return;
   const r=records[editIdx];
-  r.reply=document.getElementById('m-reply').value;r.reason=document.getElementById('m-reason').value;
-  r.date=document.getElementById('m-date').value;r.returnDate=document.getElementById('m-returnDate').value;
-  r.note=document.getElementById('m-note').value;r.handler=document.getElementById('m-handler').value;
+  // 效期品驗證：勾選後效期日期必填
+  const isExpiry=document.getElementById('m-isExpiry').checked;
+  const expiryDate=document.getElementById('m-expiryDate').value;
+  if(isExpiry && !expiryDate){
+    showToast('⚠ 效期品請填寫效期日期');
+    document.getElementById('m-expiryDate').focus();
+    return;
+  }
+  r.reply=document.getElementById('m-reply').value;
+  r.reason=document.getElementById('m-reason').value;
+  r.date=document.getElementById('m-date').value;
+  r.returnDate=document.getElementById('m-returnDate').value;
+  r.notifyDate=document.getElementById('m-notifyDate').value;
+  r.note=document.getElementById('m-note').value;
+  r.handler=document.getElementById('m-handler').value;
   r.supplierName=document.getElementById('m-supplierName').value||r.supplierName||'';
+  r.isExpiry=isExpiry;
+  r.expiryDate=isExpiry?expiryDate:'';
   r.updatedAt=todayStr();
   closeModal();renderTable();updateStats();
   try{await saveRecord(r);setSyncStatus('ok','✓ 已同步');showToast('✓ 已儲存');}
@@ -1554,6 +2193,48 @@ async function saveEdit(){
 }
 document.getElementById('edit-modal').addEventListener('click',function(e){if(e.target===document.getElementById('edit-modal'))closeModal();});
 function handleRowClick(event,idx){if(event.target.type==='checkbox'||event.target.tagName==='BUTTON'||event.target.closest('button'))return;openEdit(idx);}
+
+// ── 效期提醒：登入後自動檢查效期 ≤ 60 天的品項 ──
+function closeExpiryNotif(){
+  document.getElementById('expiry-notif-overlay').classList.remove('open');
+}
+function showExpiryNotif(){
+  // 篩選：效期品 且 距到期 ≤ 60 天（含已過期）
+  const items = records.filter(function(r){
+    if(!r.isExpiry || !r.expiryDate) return false;
+    const d = daysUntil(r.expiryDate);
+    return d !== null && d <= 60;
+  }).sort(function(a,b){ return daysUntil(a.expiryDate)-daysUntil(b.expiryDate); });
+
+  if(!items.length) return; // 無需提醒
+
+  let html='<div style="font-size:12px;color:var(--text2);margin-bottom:12px">以下效期品距到期日 ≤ 60 天，請盡速確認處理進度：</div>';
+  items.forEach(function(r){
+    const d=daysUntil(r.expiryDate);
+    let pill,cls;
+    if(d<0){
+      pill='已過期 '+Math.abs(d)+' 天'; cls='expiry-over';
+    } else if(d<=7){
+      pill='D-'+d+'天'; cls='expiry-crit';
+    } else if(d<=30){
+      pill='D-'+d+'天'; cls='expiry-warn';
+    } else {
+      pill='D-'+d+'天'; cls='expiry-ok';
+    }
+    const bg=d<0?'#f8fafc':d<=7?'#fff5f5':d<=30?'#fffbeb':'#f0fff4';
+    const border=d<0?'#e5e7eb':d<=7?'#fecaca':d<=30?'#fde68a':'#86efac';
+    html+=`<div class="notif-item" style="background:${bg};border-color:${border}">
+      <div style="font-size:20px">${d<0?'💀':d<=7?'🚨':d<=30?'⚠️':'🕐'}</div>
+      <div class="notif-item-info">
+        <div class="notif-item-name">${r.name}</div>
+        <div class="notif-item-meta">供應商：${r.sup}　效期：<strong>${r.expiryDate}</strong>　${r.handler?'處理人：'+r.handler:''}</div>
+      </div>
+      <span class="${cls}">${pill}</span>
+    </div>`;
+  });
+  document.getElementById('expiry-notif-body').innerHTML=html;
+  document.getElementById('expiry-notif-overlay').classList.add('open');
+}
 
 // ── 匯出 ──
 function exportData(){
@@ -1573,11 +2254,12 @@ function showAdminView(){hideAllViews();document.getElementById('admin-view').st
 async function loadAdminStats(){
   const grid=document.getElementById('admin-wh-grid');
   grid.innerHTML='<div style="color:var(--text3);font-size:12px;padding:16px">載入中...</div>';
-  const whs=[{key:'kaolog',label:'岡山倉',color:'#10b981'},{key:'dadu01',label:'大肚倉',color:'#3b82f6'},{key:'daxi01',label:'大溪倉',color:'#8b5cf6'}];
+  // 只保留岡山倉和大肚倉
+  const whs=[{key:'kaolog',label:'岡山倉',color:'#10b981'},{key:'dadu01',label:'大肚倉',color:'#3b82f6'}];
   let html='';
   for(let i=0;i<whs.length;i++){
     const wh=whs[i];let data=[];
-    try{data=await sbFetch('GET',TABLE+'?warehouse=eq.'+wh.key+'&limit=1000',null)||[];}catch(e){}
+    try{data=await sbFetch('GET',TABLE+'?warehouse=eq.'+wh.key+'&limit=2000',null)||[];}catch(e){}
     const recs=data.map(dbToRecord);
     const tot=recs.length,pend=recs.filter(function(r){return !r.reply;}).length,ov=recs.filter(function(r){return isOverdue(r);}).length;
     const tr=recs.filter(function(r){return r.reply==='轉不良';}).length,ret=recs.filter(function(r){return r.reply==='不良退';}).length,sw=recs.filter(function(r){return r.reply==='不良換';}).length;
@@ -1592,9 +2274,11 @@ async function loadAdminStats(){
   grid.innerHTML=html;
 }
 function renderAdminAccounts(){
+  const roleLabel={'admin':'管理員','manager':'主管','staff':'一般人員'};
+  const roleClass={'admin':'role-admin','manager':'role-user','staff':'role-user'};
   document.getElementById('admin-accounts-tbody').innerHTML=Object.entries(ACCOUNTS).map(function(entry){
     const id=entry[0],acc=entry[1];
-    return '<tr><td><strong>'+id+'</strong></td><td>'+acc.name+'</td><td><span class="role-badge '+(acc.role==='admin'?'role-admin':'role-user')+'">'+(acc.role==='admin'?'管理員':'倉庫')+'</span></td></tr>';
+    return '<tr><td><strong>'+id+'</strong></td><td>'+(acc.whLabel||'—')+'</td><td>'+acc.name+'</td><td><span class="role-badge '+(roleClass[acc.role]||'role-user')+'">'+(roleLabel[acc.role]||acc.role)+'</span></td></tr>';
   }).join('');
 }
 </script>
