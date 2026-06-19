@@ -1867,7 +1867,42 @@ function hideAllViews(){
   document.getElementById('sidebar').style.display='none';
 }
 function goHome(){if(!currentUser)return;showDashboard();}
-function showDashboard(){hideAllViews();document.getElementById('dashboard-view').style.display='block';}
+function showDashboard(){
+  hideAllViews();
+  const dv = document.getElementById('dashboard-view');
+  // 用 JS 直接設定樣式，不依賴 CSS 快取
+  dv.style.display = 'block';
+  dv.style.width = '100%';
+  dv.style.padding = window.innerWidth <= 768 ? '10px 8px' : '20px 16px';
+  dv.style.boxSizing = 'border-box';
+  // 修正 dash-cards
+  const dc = document.querySelector('.dash-cards');
+  if(dc){
+    dc.style.display = 'grid';
+    dc.style.width = '100%';
+    dc.style.margin = '0 auto';
+    dc.style.maxWidth = '1200px';
+    if(window.innerWidth <= 768){
+      dc.style.gridTemplateColumns = 'repeat(2,1fr)';
+      dc.style.gap = '8px';
+      dc.style.margin = '0';
+    } else {
+      dc.style.gridTemplateColumns = 'repeat(7,1fr)';
+      dc.style.gap = '12px';
+    }
+  }
+  // 效期品跨兩欄
+  const expiry = document.getElementById('card-expiry');
+  if(expiry && window.innerWidth <= 768){
+    expiry.style.gridColumn = '1 / -1';
+  }
+  // 修正 main
+  const main = document.querySelector('.main');
+  if(main){
+    main.style.display = 'block';
+    main.style.marginTop = 'var(--header-h)';
+  }
+}
 function showEmptyGuide(){
   hideAllViews();
   document.getElementById('table-view').style.display='flex';
