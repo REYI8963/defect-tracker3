@@ -1869,12 +1869,10 @@ function goHome(){if(!currentUser)return;showDashboard();}
 function showDashboard(){
   hideAllViews();
   const dv = document.getElementById('dashboard-view');
-  // 用 JS 直接設定樣式，不依賴 CSS 快取
   dv.style.display = 'block';
   dv.style.width = '100%';
   dv.style.padding = window.innerWidth <= 768 ? '10px 8px' : '20px 16px';
   dv.style.boxSizing = 'border-box';
-  // 修正 dash-cards
   const dc = document.querySelector('.dash-cards');
   if(dc){
     dc.style.display = 'grid';
@@ -1890,17 +1888,16 @@ function showDashboard(){
       dc.style.gap = '12px';
     }
   }
-  // 效期品跨兩欄
   const expiry = document.getElementById('card-expiry');
   if(expiry && window.innerWidth <= 768){
     expiry.style.gridColumn = '1 / -1';
   }
-  // 修正 main
   const main = document.querySelector('.main');
-  if(main){
-    main.style.display = 'block';
-    main.style.marginTop = 'var(--header-h)';
-  }
+  if(main){ main.style.display = 'block'; }
+  // 強制捲到最頂部，防止通知視窗把頁面拉到底部
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
 }
 function showEmptyGuide(){
   hideAllViews();
@@ -2189,6 +2186,7 @@ function showReturnDateNotif(){
   document.getElementById('notif-body').innerHTML=html;
   document.getElementById('notif-close-btn').onclick=function(){closeNotif();setTimeout(showOverdueNotif,300);};
   document.getElementById('notif-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
 }
 function showOverdueNotif(){
   if(notifShown)return;
@@ -2202,8 +2200,13 @@ function showOverdueNotif(){
   document.getElementById('notif-body').innerHTML=html;
   document.getElementById('notif-close-btn').onclick=function(){closeNotif();};
   document.getElementById('notif-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
 }
-function closeNotif(){document.getElementById('notif-overlay').classList.remove('open');}
+function closeNotif(){
+  document.getElementById('notif-overlay').classList.remove('open');
+  document.body.style.overflow='';
+  window.scrollTo(0,0);
+}
 
 // ── 視圖切換 ──
 function showTable(key){
@@ -2314,6 +2317,8 @@ function handleRowClick(event,idx){if(event.target.type==='checkbox'||event.targ
 // ── 效期提醒：登入後自動檢查效期 ≤ 60 天的品項 ──
 function closeExpiryNotif(){
   document.getElementById('expiry-notif-overlay').classList.remove('open');
+  document.body.style.overflow='';
+  window.scrollTo(0,0);
 }
 function showExpiryNotif(){
   // 篩選：效期品 且 距到期 ≤ 60 天（含已過期）
@@ -2351,6 +2356,7 @@ function showExpiryNotif(){
   });
   document.getElementById('expiry-notif-body').innerHTML=html;
   document.getElementById('expiry-notif-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
 }
 
 // ── 匯出 ──
