@@ -1955,19 +1955,60 @@ async function saveRecord(r){
   else{const res=await sbFetch('POST',TABLE,body);if(res&&res[0])r.id=res[0].id;}
 }
 
-// ── 批次同步：改用 UPSERT，不再刪除後重寫，根本解決資料消失問題 ──
+// ── 批次同步（修正重複資料問題）──
+// 策略：先從 DB 讀取現有已填欄位 → 合併 → 刪除舊資料 → 重新寫入
+// 這樣既不會重複，也不會遺失已填的備註、商流等資料
 async function saveAllRecords(){
   setSyncStatus('loading','⏳ 同步中...');
   try{
-    const bodies=records.map(function(r){return recordToDb(r,currentUser.whKey);});
-    // UPSERT：依 warehouse+sku+loc 判斷新增或更新
-    for(let i=0;i<bodies.length;i+=100){
-      await sbFetch('POST',TABLE,bodies.slice(i,i+100));
+    // 步驟 1：先從 DB 讀取該倉現有資料，保存已填欄位
+    const existing = await sbFetch('GET', TABLE+'?warehouse=eq.'+currentUser.whKey+'&limit=2000', null);
+    const existMap = {};
+    (existing||[]).forEach(function(r){
+      const key = (r.sku||'')+'_'+(r.loc||'');
+      existMap[key] = r; // 保存 DB 裡的完整資料
+    });
+
+    // 步驟 2：將記憶體中的 records 與 DB 已填資料合併
+    // 保留已填欄位（reply/reason/date/note 等），更新基本資訊（qty/name/sn）
+    const mergedBodies = records.map(function(r){
+      const key = (r.sku||'')+'_'+(r.loc||'');
+      const dbRow = existMap[key];
+      const body = recordToDb(r, currentUser.whKey);
+      if(dbRow){
+        // 保留 DB 中已填的追蹤欄位，防止覆蓋
+        body.reply       = body.reply       || dbRow.reply       || '';
+        body.reason      = body.reason      || dbRow.reason      || '';
+        body.date        = body.date        || dbRow.date        || '';
+        body.return_date = body.return_date || dbRow.return_date || '';
+        body.note        = body.note        || dbRow.note        || '';
+        body.handler     = body.handler     || dbRow.handler     || '';
+        body.notify_date = body.notify_date || dbRow.notify_date || '';
+        body.is_expiry   = body.is_expiry   !== undefined ? body.is_expiry : (dbRow.is_expiry||false);
+        body.expiry_date = body.expiry_date || dbRow.expiry_date || '';
+        body.supplier_name = body.supplier_name || dbRow.supplier_name || '';
+      }
+      return body;
+    });
+
+    // 步驟 3：刪除該倉舊資料（確保不重複）
+    await sbFetch('DELETE', TABLE+'?warehouse=eq.'+currentUser.whKey, null);
+
+    // 步驟 4：分批寫入合併後的資料（每批 100 筆）
+    for(let i=0; i<mergedBodies.length; i+=100){
+      await sbFetch('POST', TABLE, mergedBodies.slice(i, i+100));
     }
-    const data=await sbFetch('GET',TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=2000',null);
-    records=(data||[]).map(dbToRecord);
+
+    // 步驟 5：重新讀取取得最新 id
+    const data = await sbFetch('GET', TABLE+'?warehouse=eq.'+currentUser.whKey+'&order=sn.asc&limit=2000', null);
+    records = (data||[]).map(dbToRecord);
     setSyncStatus('ok','✓ 已同步');
-  }catch(e){setSyncStatus('err','✗ 同步失敗');showToast('⚠ 同步失敗：'+e.message,5000);}
+    showToast('✓ 已同步 '+records.length+' 筆');
+  }catch(e){
+    setSyncStatus('err','✗ 同步失敗');
+    showToast('⚠ 同步失敗：'+e.message, 5000);
+    console.error('saveAllRecords error:', e);
+  }
 }
 
 // ── 清空（主管以上才能操作）──
