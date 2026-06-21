@@ -899,6 +899,7 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
       </div>
       <div class="form-grid">
         <div class="form-row"><label>🔖 商流回覆</label><select id="m-reply"><option value="">-- 未填寫 --</option><option>轉不良</option><option>不良退</option><option>不良換</option></select></div>
+        <div class="form-row"><label>📍 儲位</label><input type="text" id="m-loc" placeholder="輸入儲位"></div>
         <div class="form-row"><label>📅 反映日期</label><input type="date" id="m-date"></div>
         <div class="form-row"><label>🚚 廠商收退日</label><input type="date" id="m-returnDate"></div>
         <div class="form-row"><label>📧 發信通知廠商日期</label><input type="date" id="m-notifyDate"></div>
@@ -918,7 +919,11 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
         </div>
       </div>
     </div>
-    <div class="modal-footer"><button class="btn" onclick="closeModal()">取消</button><button class="btn btn-dark" onclick="saveEdit()">💾 儲存</button></div>
+    <div class="modal-footer">
+      <button class="btn btn-red" onclick="deleteRecord(editIdx)" style="margin-right:auto">🗑 刪除此筆</button>
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn btn-dark" onclick="saveEdit()">💾 儲存</button>
+    </div>
   </div>
 </div>
 
@@ -2041,15 +2046,16 @@ function clearAllData(){
   modal.classList.add('open');
 }
 
-// ── 匯入 Excel（智慧合併，保留已填資料不消失）──
+// ── 匯入 Excel（智慧合併 + 儲位異動偵測）──
 function handleFile(input){
-  // 權限檢查：只有主管以上可以匯入
+  // 權限檢查
   if(!canImport()){showToast('⚠ 權限不足，僅主管可匯入 Excel');input.value='';return;}
   const file=input.files[0];if(!file)return;
   showLoading('讀取 Excel 中...');
   const reader=new FileReader();
   reader.onload=async function(e){
     try{
+      // ── 解析 Excel ──
       const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
       const sn=wb.SheetNames.find(function(n){return n==='明細表';})||wb.SheetNames[1]||wb.SheetNames[0];
       if(!sn){hideLoading();alert('找不到分頁');return;}
@@ -2058,47 +2064,158 @@ function handleFile(input){
       if(raw.length<2){hideLoading();alert('無資料');return;}
       const hdr=raw[0].map(function(h){return String(h).trim();});
       const ci={sn:hdr.indexOf('項次'),sup:hdr.indexOf('供應商代號'),loc:hdr.indexOf('儲位'),cat:hdr.indexOf('大分類'),sku:hdr.indexOf('商品代號'),name:hdr.indexOf('品名'),qty:hdr.indexOf('庫存數量')};
-      // 建立 Excel 資料 map
+
+      // ── 建立 Excel 資料 map（key = sku_loc）──
       const newMap={};
+      // 同時建立「只以 sku 為 key」的 map，用來偵測儲位異動
+      const newSkuMap={};
       for(let i=1;i<raw.length;i++){
         const row=raw[i];
         const sku=String(row[ci.sku]||'').trim(),loc=String(row[ci.loc]||'').trim();
         const k=sku+'_'+loc;if(!k||k==='_')continue;
-        newMap[k]={sn:Number(row[ci.sn])||i,sup:String(row[ci.sup]||'').trim(),loc:loc,cat:String(row[ci.cat]||'').trim(),sku:sku,name:String(row[ci.name]||'').trim(),qty:row[ci.qty]!==''?Number(row[ci.qty]):0,supplierName:lookupSupplierName(String(row[ci.sup]||'').trim())};
+        const nd={sn:Number(row[ci.sn])||i,sup:String(row[ci.sup]||'').trim(),loc:loc,cat:String(row[ci.cat]||'').trim(),sku:sku,name:String(row[ci.name]||'').trim(),qty:row[ci.qty]!==''?Number(row[ci.qty]):0,supplierName:lookupSupplierName(String(row[ci.sup]||'').trim())};
+        newMap[k]=nd;
+        newSkuMap[sku]=nd; // 記錄每個 SKU 的最新儲位
       }
-      // 建立現有資料 map
-      const existMap={};
-      records.forEach(function(r){const k=r.sku+'_'+r.loc;if(k)existMap[k]=r;});
-      let added=0,updated=0;
-      const merged=[];
-      // Excel 有的資料：更新或新增
-      Object.entries(newMap).forEach(function(entry){
-        const k=entry[0],nd=entry[1];
-        if(existMap[k]){
-          // ✅ 已存在：只更新庫存/品名/項次，保留所有已填欄位
-          merged.push(Object.assign({},existMap[k],{qty:nd.qty,sn:nd.sn,name:nd.name,sup:nd.sup,supplierName:nd.supplierName||existMap[k].supplierName}));
-          updated++;
-        }else{
-          // ✅ 新品項：新增
-          merged.push({sn:nd.sn,sup:nd.sup,supplierName:nd.supplierName,loc:nd.loc,cat:nd.cat,sku:nd.sku,name:nd.name,qty:nd.qty,reply:'',reason:'',date:'',returnDate:'',note:'',handler:'',updatedAt:''});
-          added++;
+
+      // ── 建立現有資料 map ──
+      const existMap={};       // key = sku_loc
+      const existSkuMap={};    // key = sku（偵測儲位異動用）
+      records.forEach(function(r){
+        const k=r.sku+'_'+r.loc;
+        if(k){existMap[k]=r;}
+        if(r.sku){existSkuMap[r.sku]=r;}
+      });
+
+      // ── 偵測儲位異動：同 SKU 但儲位不同，且有已填資料的 ──
+      const locChanges=[];
+      Object.entries(newSkuMap).forEach(function(entry){
+        const sku=entry[0],nd=entry[1];
+        const oldRec=existSkuMap[sku];
+        if(!oldRec) return; // 新品項，不需警示
+        if(oldRec.loc===nd.loc) return; // 儲位沒變，正常
+        const newKey=sku+'_'+nd.loc;
+        if(existMap[newKey]) return; // 新儲位已存在，不重複警示
+        // 有已填資料才警示（reply/reason/note 有任一填寫）
+        if(oldRec.reply||oldRec.reason||oldRec.note){
+          locChanges.push({sku:sku,name:nd.name,oldLoc:oldRec.loc,newLoc:nd.loc,oldRec:oldRec,newData:nd});
         }
       });
-      // ✅ Excel 沒有、DB 有的：保留不刪（避免資料消失）
-      const keepOld=[];
-      records.forEach(function(r){const k=r.sku+'_'+r.loc;if(!newMap[k])keepOld.push(r);});
-      records=[...merged,...keepOld].sort(function(a,b){return a.sn-b.sn;});
-      showTableIfHasData();renderTable();updateStats();
-      notifShown=false;
-      let msg='✓ 匯入完成：新增 '+added+' 筆，更新 '+updated+' 筆';
-      if(keepOld.length>0)msg+='，保留舊資料 '+keepOld.length+' 筆';
-      showToast(msg,4000);
-      if(records.length>0){showDashboard();setTimeout(function(){showReturnDateNotif();setTimeout(showExpiryNotif,400);},600);}
-      await saveAllRecords();renderTable();updateStats();
-    }catch(err){alert('讀取失敗：'+err.message);}
-    hideLoading();input.value='';
+
+      // ── 執行合併（不含儲位異動的品項）──
+      async function doMerge(locChangesToKeep){
+        let added=0,updated=0;
+        const merged=[];
+        Object.entries(newMap).forEach(function(entry){
+          const k=entry[0],nd=entry[1];
+          if(existMap[k]){
+            // 已存在：更新庫存/品名，保留已填欄位
+            merged.push(Object.assign({},existMap[k],{qty:nd.qty,sn:nd.sn,name:nd.name,sup:nd.sup,supplierName:nd.supplierName||existMap[k].supplierName}));
+            updated++;
+          }else{
+            // 新品項：判斷是否為儲位異動且選擇保留舊資料
+            const keepOldRec=locChangesToKeep[nd.sku];
+            if(keepOldRec){
+              // 用舊資料的填寫內容 + 更新新儲位
+              merged.push(Object.assign({},keepOldRec,{loc:nd.loc,qty:nd.qty,sn:nd.sn,name:nd.name,id:null}));
+              updated++;
+            }else{
+              merged.push({sn:nd.sn,sup:nd.sup,supplierName:nd.supplierName,loc:nd.loc,cat:nd.cat,sku:nd.sku,name:nd.name,qty:nd.qty,reply:'',reason:'',date:'',returnDate:'',note:'',handler:'',updatedAt:''});
+              added++;
+            }
+          }
+        });
+        // Excel 沒有的舊資料：移除儲位異動且已處理的，其餘保留
+        const keepOld=[];
+        records.forEach(function(r){
+          const k=r.sku+'_'+r.loc;
+          if(newMap[k]) return; // Excel 有的已處理
+          if(locChangesToKeep[r.sku]) return; // 儲位異動已用新儲位寫入
+          keepOld.push(r);
+        });
+        records=[...merged,...keepOld].sort(function(a,b){return a.sn-b.sn;});
+        showTableIfHasData();renderTable();updateStats();notifShown=false;
+        let msg='✓ 匯入完成：新增 '+added+' 筆，更新 '+updated+' 筆';
+        if(keepOld.length>0)msg+='，保留舊資料 '+keepOld.length+' 筆';
+        showToast(msg,4000);
+        if(records.length>0){showDashboard();setTimeout(function(){showReturnDateNotif();setTimeout(showExpiryNotif,400);},600);}
+        await saveAllRecords();renderTable();updateStats();
+      }
+
+      // ── 若有儲位異動，先彈出詢問視窗 ──
+      if(locChanges.length>0){
+        hideLoading();
+        showLocChangeDialog(locChanges, doMerge);
+      }else{
+        // 沒有儲位異動，直接合併
+        await doMerge({});
+        hideLoading();input.value='';
+      }
+
+    }catch(err){
+      console.error('匯入失敗：',err);
+      alert('讀取失敗：'+err.message);
+      hideLoading();input.value='';
+    }
   };
   reader.readAsArrayBuffer(file);
+}
+
+// ── 儲位異動確認視窗 ──
+// locChanges：偵測到的異動清單
+// callback(locChangesToKeep)：用戶決定後執行的 merge 函式
+function showLocChangeDialog(locChanges, callback){
+  const modal=document.getElementById('confirm-modal');
+  document.getElementById('confirm-title').textContent='⚠️ 偵測到儲位異動';
+
+  // 建立每筆的選擇狀態（預設：保留舊資料）
+  const choices={}; // sku -> 'keep'|'new'
+  locChanges.forEach(function(c){choices[c.sku]='keep';});
+
+  function buildMsg(){
+    let html='<p style="font-size:12px;color:var(--text2);margin-bottom:12px">以下品項儲位已變動，且有已填寫的追蹤資料。請選擇處理方式：</p>';
+    locChanges.forEach(function(c){
+      html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:8px">'+
+        '<div style="font-size:12px;font-weight:700;margin-bottom:6px">'+c.name+'</div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">SKU：'+c.sku+'　儲位：<span style="color:var(--coral)">'+c.oldLoc+'</span> → <span style="color:var(--teal)">'+c.newLoc+'</span></div>'+
+        '<div style="display:flex;gap:8px">'+
+          '<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;flex:1;padding:6px 8px;border-radius:var(--r);border:1.5px solid '+(choices[c.sku]==='keep'?'#1a1917':'var(--border)')+';background:'+(choices[c.sku]==='keep'?'#f0f0ec':'var(--surface)')+'">'+
+            '<input type="radio" name="loc_'+c.sku+'" value="keep" '+(choices[c.sku]==='keep'?'checked':'')+' onchange="locChoice(\''+c.sku+'\',\'keep\')"> 保留舊資料（移至新儲位）</label>'+
+          '<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;flex:1;padding:6px 8px;border-radius:var(--r);border:1.5px solid '+(choices[c.sku]==='new'?'#1a1917':'var(--border)')+';background:'+(choices[c.sku]==='new'?'#f0f0ec':'var(--surface)')+'">'+
+            '<input type="radio" name="loc_'+c.sku+'" value="new" '+(choices[c.sku]==='new'?'checked':'')+' onchange="locChoice(\''+c.sku+'\',\'new\')"> 建立新筆資料</label>'+
+        '</div>'+
+      '</div>';
+    });
+    return html;
+  }
+
+  // 全域函式：radio 切換時更新選擇
+  window.locChoice=function(sku, val){
+    choices[sku]=val;
+    document.getElementById('confirm-msg').innerHTML=buildMsg();
+  };
+
+  document.getElementById('confirm-msg').innerHTML=buildMsg();
+  document.getElementById('confirm-cancel').textContent='取消匯入';
+  document.getElementById('confirm-ok').textContent='確認並繼續匯入';
+  document.getElementById('confirm-cancel').onclick=function(){
+    modal.classList.remove('open');
+    showToast('已取消匯入');
+  };
+  document.getElementById('confirm-ok').onclick=async function(){
+    modal.classList.remove('open');
+    showLoading('匯入中...');
+    // 把選擇「保留舊資料」的 sku 整理成 map
+    const locChangesToKeep={};
+    locChanges.forEach(function(c){
+      if(choices[c.sku]==='keep') locChangesToKeep[c.sku]=c.oldRec;
+    });
+    await callback(locChangesToKeep);
+    hideLoading();
+    document.getElementById('file-input').value='';
+    document.getElementById('file-input-mob').value='';
+  };
+  modal.classList.add('open');
 }
 
 // ── Render ──
@@ -2312,6 +2429,7 @@ function openEdit(idx){
   if(r.supplierName){sb.style.display='flex';document.getElementById('m-supplier-name').textContent=r.supplierName;}else{sb.style.display='none';}
   document.getElementById('m-supplierName').value=r.supplierName||'';
   document.getElementById('m-reply').value=r.reply||'';
+  document.getElementById('m-loc').value=r.loc||'';   // 儲位欄位
   document.getElementById('m-reason').value=r.reason||'';
   document.getElementById('m-date').value=r.date||'';
   document.getElementById('m-returnDate').value=r.returnDate||'';
@@ -2338,6 +2456,7 @@ async function saveEdit(){
     return;
   }
   r.reply=document.getElementById('m-reply').value;
+  r.loc=document.getElementById('m-loc').value.trim()||r.loc; // 更新儲位（不允許空白）
   r.reason=document.getElementById('m-reason').value;
   r.date=document.getElementById('m-date').value;
   r.returnDate=document.getElementById('m-returnDate').value;
@@ -2354,6 +2473,40 @@ async function saveEdit(){
 }
 document.getElementById('edit-modal').addEventListener('click',function(e){if(e.target===document.getElementById('edit-modal'))closeModal();});
 function handleRowClick(event,idx){if(event.target.type==='checkbox'||event.target.tagName==='BUTTON'||event.target.closest('button'))return;openEdit(idx);}
+
+// ── 刪除單筆追蹤清單資料 ──
+async function deleteRecord(idx){
+  if(idx===null||idx===undefined)return;
+  const r=records[idx];
+  if(!r)return;
+  const modal=document.getElementById('confirm-modal');
+  document.getElementById('confirm-title').textContent='刪除追蹤資料';
+  document.getElementById('confirm-msg').textContent='確定要刪除「'+r.name+'」這筆資料嗎？此動作無法復原。';
+  document.getElementById('confirm-cancel').textContent='取消';
+  document.getElementById('confirm-ok').textContent='確定刪除';
+  document.getElementById('confirm-cancel').onclick=function(){modal.classList.remove('open');};
+  document.getElementById('confirm-ok').onclick=async function(){
+    modal.classList.remove('open');
+    closeModal();
+    showLoading('刪除中...');
+    try{
+      if(r.id){
+        // 有 id 代表已存入 DB，需從 DB 刪除
+        await sbFetch('DELETE', TABLE+'?id=eq.'+r.id, null);
+      }
+      // 從記憶體中移除
+      records.splice(idx, 1);
+      renderTable();updateStats();
+      showToast('✓ 已刪除');
+      setSyncStatus('ok','✓ 已同步');
+    }catch(e){
+      showToast('⚠ 刪除失敗：'+e.message, 4000);
+      setSyncStatus('err','✗ 同步失敗');
+    }
+    hideLoading();
+  };
+  modal.classList.add('open');
+}
 
 // ── 效期提醒：登入後自動檢查效期 ≤ 60 天的品項 ──
 function closeExpiryNotif(){
