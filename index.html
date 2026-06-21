@@ -2479,29 +2479,39 @@ async function deleteRecord(idx){
   if(idx===null||idx===undefined)return;
   const r=records[idx];
   if(!r)return;
+
+  // 先關閉編輯 Modal，避免確認視窗被遮住
+  document.getElementById('edit-modal').classList.remove('open');
+
   const modal=document.getElementById('confirm-modal');
   document.getElementById('confirm-title').textContent='刪除追蹤資料';
   document.getElementById('confirm-msg').textContent='確定要刪除「'+r.name+'」這筆資料嗎？此動作無法復原。';
   document.getElementById('confirm-cancel').textContent='取消';
   document.getElementById('confirm-ok').textContent='確定刪除';
-  document.getElementById('confirm-cancel').onclick=function(){modal.classList.remove('open');};
+  document.getElementById('confirm-cancel').onclick=function(){
+    modal.classList.remove('open');
+    // 取消刪除後重新開啟編輯 Modal
+    openEdit(idx);
+  };
   document.getElementById('confirm-ok').onclick=async function(){
     modal.classList.remove('open');
-    closeModal();
     showLoading('刪除中...');
     try{
+      // 若有 DB id，從 Supabase 刪除
       if(r.id){
-        // 有 id 代表已存入 DB，需從 DB 刪除
         await sbFetch('DELETE', TABLE+'?id=eq.'+r.id, null);
       }
-      // 從記憶體中移除
+      // 從記憶體中移除該筆
       records.splice(idx, 1);
+      editIdx=null;
       renderTable();updateStats();
       showToast('✓ 已刪除');
       setSyncStatus('ok','✓ 已同步');
     }catch(e){
       showToast('⚠ 刪除失敗：'+e.message, 4000);
       setSyncStatus('err','✗ 同步失敗');
+      // 刪除失敗時重新開啟編輯 Modal
+      openEdit(idx);
     }
     hideLoading();
   };
