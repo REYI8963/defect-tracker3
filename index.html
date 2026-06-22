@@ -382,6 +382,26 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 .admin-accounts-table th{background:var(--surface2);padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.4px;text-transform:uppercase;}
 .admin-accounts-table td{padding:10px 16px;border-top:1px solid var(--border);font-size:12px;}
 .role-badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+/* ── 退貨通知單產生器樣式 ── */
+.rn-supplier-group{border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:12px;overflow:hidden;}
+.rn-supplier-header{background:var(--surface2);padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.rn-supplier-header:hover{background:#e8e7e0;}
+.rn-supplier-name{font-size:13px;font-weight:700;flex:1;}
+.rn-supplier-code{font-size:11px;color:var(--text3);font-family:monospace;}
+.rn-supplier-count{font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:20px;font-weight:600;}
+.rn-items{padding:8px 12px;}
+.rn-item{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:var(--r);transition:background .1s;}
+.rn-item:hover{background:var(--surface2);}
+.rn-item-check{flex-shrink:0;}
+.rn-item-sku{font-size:11px;color:var(--text3);font-family:monospace;width:90px;flex-shrink:0;}
+.rn-item-name{font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rn-item-qty{font-size:12px;font-weight:700;width:36px;text-align:right;flex-shrink:0;}
+.rn-item-reason{font-size:11px;color:var(--text2);width:100px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* 箱數輸入區 */
+.rn-box-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:#fafaf6;}
+.rn-box-label{font-size:12px;color:var(--text2);}
+.rn-box-input{width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:700;text-align:center;outline:none;}
+.rn-box-input:focus{border-color:#1a1917;}
 .role-admin{background:var(--amber-bg);color:var(--amber);}
 .role-user{background:var(--blue-bg);color:var(--blue);}
 /* ── 效期品標示 ── */
@@ -830,7 +850,44 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
   </div>
 </div>
 
-<!-- 效期品到期提醒視窗 -->
+<!-- ═══════════════════════════════════════
+     退貨通知單產生器 Modal
+     功能：勾選不良退品項 → 產生符合格式的 Excel
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="return-notice-modal">
+  <div class="modal" style="width:680px;max-width:96vw">
+    <div class="modal-header">
+      <div class="modal-title">
+        <div class="modal-title-icon">📄</div>
+        產生退貨通知單
+      </div>
+      <button class="modal-close" onclick="closeReturnNoticeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- 說明文字 -->
+      <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:var(--r);padding:10px 14px;font-size:12px;color:#0c4a6e;margin-bottom:16px">
+        💡 以下為商流回覆「不良退」的品項，依供應商分組。請勾選要納入本次退貨通知單的品項，並填入箱數後產生 Excel。
+      </div>
+      <!-- 供應商分組列表（動態產生） -->
+      <div id="return-notice-groups" style="max-height:420px;overflow-y:auto"></div>
+      <!-- 無不良退資料時的提示 -->
+      <div id="return-notice-empty" style="display:none;text-align:center;padding:32px;color:var(--text3)">
+        <div style="font-size:36px;margin-bottom:12px">📭</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text2)">目前沒有「不良退」的品項</div>
+        <div style="font-size:12px;margin-top:6px">請先將商流回覆設定為「不良退」</div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;align-items:center">
+      <div style="font-size:11px;color:var(--text3)" id="return-notice-selected-hint">請至少勾選一項</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="closeReturnNoticeModal()">取消</button>
+        <button class="btn btn-dark" id="return-notice-gen-btn" onclick="generateReturnNoticeExcel()" disabled>
+          📥 產生並下載 Excel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="notif-overlay" id="expiry-notif-overlay">
   <div class="notif-box" style="max-width:560px">
     <div class="notif-header">
@@ -1063,6 +1120,8 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
         <select id="filter-reply" onchange="renderTable()"><option value="">🔖 全部商流</option><option>轉不良</option><option>不良退</option><option>不良換</option><option value="__empty">未填寫</option></select>
         <select id="filter-cat" onchange="renderTable()"><option value="">🏷 全部分類</option><option>預購</option><option>食品</option><option>居家/美妝</option><option>國際線/其它</option></select>
         <select id="filter-overdue" onchange="renderTable()"><option value="">📅 全部狀態</option><option value="1">🚨 僅逾期</option></select>
+        <!-- 產生退貨通知單按鈕：只對不良退有意義 -->
+        <button class="btn btn-sm" onclick="openReturnNoticeModal()" style="background:#e0f2fe;border-color:#7dd3fc;color:#0c4a6e;white-space:nowrap">📄 退貨通知單</button>
         <span class="row-count" id="row-count"></span>
       </div>
       <div class="table-wrap">
@@ -1179,8 +1238,277 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 </div>
 
 <script>
-// ══════════════════════════════════════
-// 響應式：偵測手機模式
+// ══════════════════════════════════════════════════
+// 退貨通知單產生器
+// 功能：
+//   1. 收集「不良退」品項，依供應商分組顯示
+//   2. 使用者勾選品項（含全選）、填入箱數
+//   3. 呼叫 SheetJS 產生符合範本格式的 Excel
+//   4. 自動命名（日期_廠編_廠商名稱）並下載
+//   5. 同步將「發信通知廠商日期」填入今天
+// ══════════════════════════════════════════════════
+
+// ── 開啟退貨通知單 Modal ──
+function openReturnNoticeModal(){
+  try{
+    // 取得所有「不良退」的品項
+    const retItems = records.filter(r => r.reply === '不良退');
+
+    const groupsEl = document.getElementById('return-notice-groups');
+    const emptyEl  = document.getElementById('return-notice-empty');
+
+    if(retItems.length === 0){
+      // 無不良退資料：顯示空狀態
+      groupsEl.style.display = 'none';
+      emptyEl.style.display  = '';
+    } else {
+      groupsEl.style.display = '';
+      emptyEl.style.display  = 'none';
+      // 依供應商代號分組
+      renderReturnNoticeGroups(retItems);
+    }
+
+    // 重設產生按鈕狀態
+    updateReturnNoticeBtn();
+    document.getElementById('return-notice-modal').classList.add('open');
+
+  } catch(err){
+    console.error('openReturnNoticeModal error:', err);
+    showToast('⚠ 開啟退貨通知單失敗：' + err.message, 4000);
+  }
+}
+
+// ── 關閉 Modal ──
+function closeReturnNoticeModal(){
+  document.getElementById('return-notice-modal').classList.remove('open');
+}
+
+// ── 依供應商分組並渲染勾選清單 ──
+function renderReturnNoticeGroups(retItems){
+  try{
+    // 建立供應商分組 Map：key = 供應商代號
+    const supMap = {};
+    retItems.forEach(r => {
+      if(!supMap[r.sup]) supMap[r.sup] = {sup: r.sup, name: r.supplierName||r.sup, items: []};
+      supMap[r.sup].items.push(r);
+    });
+
+    const groupsEl = document.getElementById('return-notice-groups');
+    groupsEl.innerHTML = Object.values(supMap).map(group => {
+      const supKey = group.sup.replace(/[^a-zA-Z0-9]/g,'_'); // 安全的 DOM id key
+
+      return `
+      <div class="rn-supplier-group" id="rn-group-${supKey}">
+        <!-- 供應商標頭：含全選 checkbox -->
+        <div class="rn-supplier-header">
+          <input type="checkbox" id="rn-all-${supKey}"
+            style="width:15px;height:15px;accent-color:#1a1917;flex-shrink:0"
+            onchange="toggleSupplierAll('${supKey}', this.checked)"
+            title="全選此供應商">
+          <span class="rn-supplier-code">${group.sup}</span>
+          <span class="rn-supplier-name">${group.name}</span>
+          <span class="rn-supplier-count">${group.items.length} 筆不良退</span>
+        </div>
+        <!-- 品項列表 -->
+        <div class="rn-items">
+          ${group.items.map((r, i) => {
+            const ri = records.indexOf(r);
+            return `
+            <div class="rn-item">
+              <input type="checkbox" class="rn-item-check rn-check-${supKey}"
+                data-ri="${ri}" style="width:15px;height:15px;accent-color:#1a1917"
+                onchange="onReturnNoticeCheck('${supKey}')">
+              <span class="rn-item-sku">${r.sku}</span>
+              <span class="rn-item-name" title="${r.name}">${r.name}</span>
+              <span class="rn-item-qty">×${r.qty}</span>
+              <span class="rn-item-reason">${r.reason||'—'}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <!-- 箱數輸入 -->
+        <div class="rn-box-row">
+          <span class="rn-box-label">📦 箱數：</span>
+          <input type="number" class="rn-box-input" id="rn-box-${supKey}"
+            min="1" value="1" placeholder="箱數">
+          <span style="font-size:11px;color:var(--text3)">箱（請手動填入）</span>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(err){
+    console.error('renderReturnNoticeGroups error:', err);
+    showToast('⚠ 渲染分組失敗：' + err.message, 4000);
+  }
+}
+
+// ── 全選/取消全選某供應商的品項 ──
+function toggleSupplierAll(supKey, checked){
+  try{
+    document.querySelectorAll(`.rn-check-${supKey}`).forEach(cb => {
+      cb.checked = checked;
+    });
+    updateReturnNoticeBtn();
+  } catch(err){ console.error('toggleSupplierAll error:', err); }
+}
+
+// ── 單項勾選時：同步更新供應商全選 checkbox 狀態 ──
+function onReturnNoticeCheck(supKey){
+  try{
+    const all   = document.querySelectorAll(`.rn-check-${supKey}`);
+    const checked = document.querySelectorAll(`.rn-check-${supKey}:checked`);
+    const allCb = document.getElementById(`rn-all-${supKey}`);
+    if(allCb){
+      allCb.checked       = checked.length === all.length;
+      allCb.indeterminate = checked.length > 0 && checked.length < all.length;
+    }
+    updateReturnNoticeBtn();
+  } catch(err){ console.error('onReturnNoticeCheck error:', err); }
+}
+
+// ── 更新「產生」按鈕：有勾選才能按 ──
+function updateReturnNoticeBtn(){
+  try{
+    const checkedCount = document.querySelectorAll('.rn-item-check:checked').length;
+    const btn  = document.getElementById('return-notice-gen-btn');
+    const hint = document.getElementById('return-notice-selected-hint');
+    if(btn){  btn.disabled = checkedCount === 0; }
+    if(hint){ hint.textContent = checkedCount > 0 ? `已選取 ${checkedCount} 筆` : '請至少勾選一項'; }
+  } catch(err){ console.error('updateReturnNoticeBtn error:', err); }
+}
+
+// ── 產生退貨通知單 Excel（核心函式）──
+// 格式完全對應範本：廠編【廠商名稱】退貨明細 / 序/商品代號/品名/數量/備註
+// 支援多個供應商各自產生一份 Excel
+async function generateReturnNoticeExcel(){
+  try{
+    // 收集所有已勾選的品項，依供應商分組
+    const checkedBoxes = document.querySelectorAll('.rn-item-check:checked');
+    if(checkedBoxes.length === 0){ showToast('⚠ 請至少勾選一項'); return; }
+
+    // 建立「供應商代號 → 勾選品項陣列」的 Map
+    const supGroups = {};
+    checkedBoxes.forEach(cb => {
+      const ri = parseInt(cb.dataset.ri);
+      const r  = records[ri];
+      if(!r) return;
+      if(!supGroups[r.sup]) supGroups[r.sup] = {sup: r.sup, name: r.supplierName||r.sup, items: []};
+      supGroups[r.sup].items.push({r, ri});
+    });
+
+    // 今天日期字串（用於檔名 & 自動填入發信日）
+    const today    = todayStr();
+    const dateTag  = today.replace(/-/g,'').slice(2); // 例：1150622
+
+    let generatedCount = 0;
+
+    // 對每個供應商產生一份 Excel
+    for(const [sup, group] of Object.entries(supGroups)){
+      const supKey  = sup.replace(/[^a-zA-Z0-9]/g,'_');
+      const boxInput = document.getElementById(`rn-box-${supKey}`);
+      const boxCount = boxInput ? (parseInt(boxInput.value)||1) : 1;
+
+      // ── 建立 workbook（使用 SheetJS）──
+      const wb = XLSX.utils.book_new();
+      const wsData = [];
+
+      // 第1列：標題  廠編【廠商名稱】退貨明細
+      wsData.push([`${sup}【${group.name}】退貨明細`, '', '', '', '']);
+
+      // 第2列：表頭
+      wsData.push(['序', '商品代號', '品名', '數量', '備註']);
+
+      // 第3列起：品項資料（序號從1開始）
+      group.items.forEach((item, idx) => {
+        wsData.push([
+          idx + 1,
+          item.r.sku,
+          item.r.name,
+          item.r.qty,
+          item.r.reason || ''   // 備註帶入不良原因
+        ]);
+      });
+
+      // 箱數列（資料列結束後空一行）
+      const dataEndRow = 3 + group.items.length; // Excel row（1-indexed）
+      wsData.push(['箱數', '', `共          ${boxCount}       箱`, '', '']);
+
+      // 空白行
+      wsData.push(['','','','','']);
+
+      // 說明文字兩列
+      wsData.push(['收退時間：周一至周五 08：00~16：00','','','','']);
+      wsData.push(['請於收件後三個工作天內收退完，並請回覆來收退時間，謝謝。','','','','']);
+
+      // ── 轉換為 worksheet ──
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // ── 設定欄寬（對應範本精確數值）──
+      ws['!cols'] = [
+        {wpx: 43},   // A: 序
+        {wpx: 96},   // B: 商品代號
+        {wpx: 270},  // C: 品名
+        {wpx: 66},   // D: 數量
+        {wpx: 119},  // E: 備註
+      ];
+
+      // ── 設定列高（對應範本 20.1）──
+      const rowCount = wsData.length;
+      ws['!rows'] = Array.from({length: rowCount}, () => ({hpt: 20.1}));
+
+      // ── 設定合併儲存格 ──
+      const itemCount = group.items.length;
+      const boxRow    = 3 + itemCount; // 0-indexed ws row（wsData index）
+      ws['!merges'] = [
+        // 標題列 A1:E1
+        {s:{r:0,c:0}, e:{r:0,c:4}},
+        // 箱數列：A+B 合併、C+D+E 合併
+        {s:{r:boxRow-1,c:0}, e:{r:boxRow,c:1}},
+        {s:{r:boxRow-1,c:2}, e:{r:boxRow,c:4}},
+        // 說明列（空白行後）
+        {s:{r:boxRow+1,c:0}, e:{r:boxRow+1,c:4}},
+        {s:{r:boxRow+2,c:0}, e:{r:boxRow+2,c:4}},
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, '工作表1');
+
+      // ── 下載檔案（檔名：日期_廠編_廠商名稱.xlsx）──
+      // 廠商名稱取前10字，避免檔名過長
+      const safeName = group.name.slice(0, 10).replace(/[\\/:*?"<>|]/g, '');
+      const fileName = `${dateTag}_${sup}_${safeName}.xlsx`;
+
+      XLSX.writeFile(wb, fileName);
+      generatedCount++;
+
+      // ── 自動填入「發信通知廠商日期」= 今天 ──
+      // 批次更新所有勾選品項的 notifyDate，並同步存到 Supabase
+      const savePromises = group.items.map(async item => {
+        try{
+          item.r.notifyDate = today;
+          item.r.updatedAt  = today;
+          await saveRecord(item.r);
+        } catch(saveErr){
+          console.error(`saveRecord error for SKU ${item.r.sku}:`, saveErr);
+        }
+      });
+      await Promise.all(savePromises);
+    }
+
+    // 關閉 Modal、更新畫面、顯示成功訊息
+    closeReturnNoticeModal();
+    renderTable();
+    setSyncStatus('ok','✓ 已同步');
+    showToast(`✓ 已產生 ${generatedCount} 份退貨通知單，發信通知日已自動填入`, 4000);
+
+  } catch(err){
+    console.error('generateReturnNoticeExcel error:', err);
+    showToast('⚠ 產生 Excel 失敗：' + err.message, 5000);
+  }
+}
+
+// ── 點擊遮罩關閉 Modal ──
+document.getElementById('return-notice-modal').addEventListener('click', function(e){
+  if(e.target === document.getElementById('return-notice-modal')) closeReturnNoticeModal();
+});
 // ══════════════════════════════════════
 function isMobile(){ return window.innerWidth <= 768; }
 
