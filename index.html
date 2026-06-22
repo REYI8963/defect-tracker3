@@ -1457,19 +1457,13 @@ async function generateReturnNoticeExcel(){
       const ROW_NOTICE1    = 5 + itemCount;  // 收退時間
       const ROW_NOTICE2    = 6 + itemCount;  // 請於收件後（最底列）
 
-      /**
-       * 根據儲存格位置回傳正確框線設定
-       * ExcelJS 關鍵規則：合併儲存格後，被合併格的外側邊框依然有效
-       * 因此必須對每一格都設定，不能只設主格
-       * @param {number} rowNum - 1-based 列號
-       * @param {number} ci     - 1-based 欄號（1=A ~ 5=E）
-       */
+      // 框線設定：全部使用 thin（細框線）
       function getBorder(rowNum, ci){
         return {
-          top:    {style: rowNum===ROW_TITLE   ? 'medium' : 'thin'},
-          bottom: {style: rowNum===ROW_NOTICE2 ? 'medium' : 'thin'},
-          left:   {style: ci===1               ? 'medium' : 'thin'},
-          right:  {style: ci===5               ? 'medium' : 'thin'},
+          top:    {style:'thin'},
+          bottom: {style:'thin'},
+          left:   {style:'thin'},
+          right:  {style:'thin'},
         };
       }
 
