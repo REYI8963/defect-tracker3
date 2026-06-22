@@ -1385,7 +1385,7 @@ async function generateReturnNoticeExcel(){
     const checkedBoxes = document.querySelectorAll('.rn-item-check:checked');
     if(checkedBoxes.length === 0){ showToast('⚠ 請至少勾選一項'); return; }
 
-    // 建立「供應商代號 → 勾選品項陣列」的 Map
+    // ── 建立「供應商代號 → 勾選品項陣列」的 Map ──
     const supGroups = {};
     checkedBoxes.forEach(cb => {
       const ri = parseInt(cb.dataset.ri);
@@ -1396,110 +1396,221 @@ async function generateReturnNoticeExcel(){
     });
 
     // 今天日期字串（用於檔名 & 自動填入發信日）
-    const today    = todayStr();
-    const dateTag  = today.replace(/-/g,'').slice(2); // 例：1150622
+    const today   = todayStr();
+    const dateTag = today.replace(/-/g,'').slice(2); // 例：260622
 
     let generatedCount = 0;
 
-    // 對每個供應商產生一份 Excel
+    // ── 對每個供應商產生一份 Excel ──
     for(const [sup, group] of Object.entries(supGroups)){
-      const supKey  = sup.replace(/[^a-zA-Z0-9]/g,'_');
+      const supKey   = sup.replace(/[^a-zA-Z0-9]/g,'_');
       const boxInput = document.getElementById(`rn-box-${supKey}`);
       const boxCount = boxInput ? (parseInt(boxInput.value)||1) : 1;
+      const itemCount = group.items.length;
 
-      // ── 建立 workbook（使用 SheetJS）──
+      // ── 使用 SheetJS 建立 workbook ──
       const wb = XLSX.utils.book_new();
+
+      // ── 建立資料陣列（aoa = array of arrays）──
+      // Row 1：標題
+      // Row 2：表頭
+      // Row 3~(2+itemCount)：品項資料
+      // Row (3+itemCount)：箱數列
+      // Row (4+itemCount)：空白（箱數跨兩列，需要一個空白列配合合併）
+      // Row (5+itemCount)：收退時間說明
+      // Row (6+itemCount)：請於收件後說明
       const wsData = [];
 
-      // 第1列：標題  廠編【廠商名稱】退貨明細
-      wsData.push([`${sup}【${group.name}】退貨明細`, '', '', '', '']);
+      // Row 1：標題列
+      wsData.push([`${sup}【${group.name}】退貨明細`,'','','','']);
 
-      // 第2列：表頭
-      wsData.push(['序', '商品代號', '品名', '數量', '備註']);
+      // Row 2：表頭列
+      wsData.push(['序','商品代號','品名','數量','備註']);
 
-      // 第3列起：品項資料（序號從1開始）
+      // Row 3 起：品項資料
       group.items.forEach((item, idx) => {
         wsData.push([
-          idx + 1,
-          item.r.sku,
-          item.r.name,
-          item.r.qty,
-          item.r.reason || ''   // 備註帶入不良原因
+          idx + 1,        // 序號
+          item.r.sku,     // 商品代號
+          item.r.name,    // 品名
+          item.r.qty,     // 數量
+          item.r.reason||'' // 備註（帶入不良原因）
         ]);
       });
 
-      // 箱數列（資料列結束後空一行）
-      const dataEndRow = 3 + group.items.length; // Excel row（1-indexed）
-      wsData.push(['箱數', '', `共          ${boxCount}       箱`, '', '']);
+      // 箱數列（對應範本：A+B 合併顯示「箱數」，C+D+E 合併顯示「共 N 箱」）
+      wsData.push(['箱數','',`共          ${boxCount}       箱`,'','']);
 
-      // 空白行
+      // 箱數列需要合併兩列（跨 row），所以加一個空白列
       wsData.push(['','','','','']);
 
-      // 說明文字兩列
+      // 說明列1：收退時間（紅字 + 黃底）
       wsData.push(['收退時間：周一至周五 08：00~16：00','','','','']);
+
+      // 說明列2：請於收件後（紅字 + 黃底）
       wsData.push(['請於收件後三個工作天內收退完，並請回覆來收退時間，謝謝。','','','','']);
 
-      // ── 轉換為 worksheet ──
+      // ── 將資料陣列轉為 worksheet ──
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-      // ── 設定欄寬（對應範本精確數值）──
+      // ── 欄寬設定（對應範本精確數值）──
       ws['!cols'] = [
-        {wpx: 43},   // A: 序
-        {wpx: 96},   // B: 商品代號
-        {wpx: 270},  // C: 品名
-        {wpx: 66},   // D: 數量
-        {wpx: 119},  // E: 備註
+        {wpx: 43},   // A：序
+        {wpx: 96},   // B：商品代號
+        {wpx: 270},  // C：品名
+        {wpx: 66},   // D：數量
+        {wpx: 119},  // E：備註
       ];
 
-      // ── 設定列高（對應範本 20.1）──
-      const rowCount = wsData.length;
-      ws['!rows'] = Array.from({length: rowCount}, () => ({hpt: 20.1}));
+      // ── 列高設定（對應範本 20.1pt）──
+      ws['!rows'] = wsData.map(() => ({hpt: 20.1}));
 
-      // ── 設定合併儲存格 ──
-      const itemCount = group.items.length;
-      const boxRow    = 3 + itemCount; // 0-indexed ws row（wsData index）
+      // ── 計算各列的 row index（0-indexed）──
+      // Row 0 = 標題, Row 1 = 表頭, Row 2~(1+itemCount) = 品項
+      // boxRow = 2 + itemCount（箱數列）
+      // blankRow = 3 + itemCount（空白列，配合箱數合併）
+      // noticeRow1 = 4 + itemCount（說明列1）
+      // noticeRow2 = 5 + itemCount（說明列2）
+      const boxRow     = 2 + itemCount;
+      const blankRow   = 3 + itemCount;
+      const noticeRow1 = 4 + itemCount;
+      const noticeRow2 = 5 + itemCount;
+
+      // ── 合併儲存格設定 ──
       ws['!merges'] = [
-        // 標題列 A1:E1
+        // 標題列：A1:E1
         {s:{r:0,c:0}, e:{r:0,c:4}},
-        // 箱數列：A+B 合併、C+D+E 合併
-        {s:{r:boxRow-1,c:0}, e:{r:boxRow,c:1}},
-        {s:{r:boxRow-1,c:2}, e:{r:boxRow,c:4}},
-        // 說明列（空白行後）
-        {s:{r:boxRow+1,c:0}, e:{r:boxRow+1,c:4}},
-        {s:{r:boxRow+2,c:0}, e:{r:boxRow+2,c:4}},
+        // 箱數列：A+B 合併（跨兩列）
+        {s:{r:boxRow,c:0}, e:{r:blankRow,c:1}},
+        // 箱數列：C+D+E 合併（跨兩列）
+        {s:{r:boxRow,c:2}, e:{r:blankRow,c:4}},
+        // 說明列1：全欄合併
+        {s:{r:noticeRow1,c:0}, e:{r:noticeRow1,c:4}},
+        // 說明列2：全欄合併
+        {s:{r:noticeRow2,c:0}, e:{r:noticeRow2,c:4}},
       ];
+
+      // ── 樣式設定（需用 SheetJS 的 cell style）──
+      // 注意：SheetJS 免費版不支援完整樣式，但可設定基本格式
+      // 我們用自定義方式設定關鍵格式
+
+      // 通用輔助函式：設定儲存格樣式
+      function setCell(addr, value, opts){
+        if(!ws[addr]) ws[addr] = {};
+        ws[addr].v = value;
+        ws[addr].t = typeof value === 'number' ? 'n' : 's';
+        // SheetJS Pro 樣式（免費版會忽略但不報錯）
+        ws[addr].s = opts || {};
+      }
+
+      // 邊框樣式定義
+      const thinBorder = {
+        top:    {style:'thin', color:{rgb:'000000'}},
+        bottom: {style:'thin', color:{rgb:'000000'}},
+        left:   {style:'thin', color:{rgb:'000000'}},
+        right:  {style:'thin', color:{rgb:'000000'}},
+      };
+      const mediumBorder = {
+        top:    {style:'medium', color:{rgb:'000000'}},
+        bottom: {style:'medium', color:{rgb:'000000'}},
+        left:   {style:'medium', color:{rgb:'000000'}},
+        right:  {style:'medium', color:{rgb:'000000'}},
+      };
+
+      // 說明列樣式：黃底 + 紅字 + 置中
+      const noticeStyle = {
+        fill:      {fgColor:{rgb:'FFFF00'}},  // 黃色背景
+        font:      {color:{rgb:'FF0000'}, bold:true, sz:11},  // 紅色粗體
+        alignment: {horizontal:'center', vertical:'center'},
+        border:    thinBorder,
+      };
+
+      // 標題列樣式：置中
+      const titleStyle = {
+        alignment: {horizontal:'center', vertical:'center'},
+        font:      {sz:11},
+        border:    thinBorder,
+      };
+
+      // 表頭列樣式：置中 + 框線
+      const headerStyle = {
+        alignment: {horizontal:'center', vertical:'center'},
+        font:      {sz:11},
+        border:    thinBorder,
+      };
+
+      // 資料列樣式：置中 + 框線
+      const dataStyle = {
+        alignment: {horizontal:'center', vertical:'center'},
+        font:      {sz:11},
+        border:    thinBorder,
+      };
+
+      // ── 套用樣式到各儲存格 ──
+      const colLetters = ['A','B','C','D','E'];
+
+      // 標題列（Row 1）
+      setCell('A1', wsData[0][0], {...titleStyle, alignment:{horizontal:'center', wrapText:true}});
+
+      // 表頭列（Row 2）
+      ['序','商品代號','品名','數量','備註'].forEach((h, ci) => {
+        setCell(`${colLetters[ci]}2`, h, headerStyle);
+      });
+
+      // 資料列（Row 3 起）
+      group.items.forEach((item, idx) => {
+        const rowNum = idx + 3;
+        const rowData = wsData[idx + 2];
+        colLetters.forEach((col, ci) => {
+          setCell(`${col}${rowNum}`, rowData[ci], dataStyle);
+        });
+      });
+
+      // 箱數列
+      const boxRowNum = boxRow + 1; // 轉為 1-indexed
+      setCell(`A${boxRowNum}`, '箱數', {
+        ...dataStyle,
+        alignment: {horizontal:'center', vertical:'center'},
+      });
+      setCell(`C${boxRowNum}`, `共          ${boxCount}       箱`, {
+        ...dataStyle,
+        alignment: {horizontal:'center', vertical:'center'},
+      });
+
+      // 說明列
+      const nr1 = noticeRow1 + 1;
+      const nr2 = noticeRow2 + 1;
+      setCell(`A${nr1}`, '收退時間：周一至周五 08：00~16：00', noticeStyle);
+      setCell(`A${nr2}`, '請於收件後三個工作天內收退完，並請回覆來收退時間，謝謝。', noticeStyle);
 
       XLSX.utils.book_append_sheet(wb, ws, '工作表1');
 
-      // ── 下載檔案（檔名：日期_廠編_廠商名稱.xlsx）──
-      // 廠商名稱取前10字，避免檔名過長
-      const safeName = group.name.slice(0, 10).replace(/[\\/:*?"<>|]/g, '');
+      // ── 下載 Excel（檔名：日期_廠編_廠商名稱.xlsx）──
+      const safeName = group.name.slice(0,10).replace(/[\\/:*?"<>|]/g,'');
       const fileName = `${dateTag}_${sup}_${safeName}.xlsx`;
-
       XLSX.writeFile(wb, fileName);
       generatedCount++;
 
-      // ── 自動填入「發信通知廠商日期」= 今天 ──
-      // 批次更新所有勾選品項的 notifyDate，並同步存到 Supabase
+      // ── 自動填入「發信通知廠商日期」= 今天，並同步存 Supabase ──
       const savePromises = group.items.map(async item => {
         try{
           item.r.notifyDate = today;
           item.r.updatedAt  = today;
           await saveRecord(item.r);
-        } catch(saveErr){
+        }catch(saveErr){
           console.error(`saveRecord error for SKU ${item.r.sku}:`, saveErr);
         }
       });
       await Promise.all(savePromises);
     }
 
-    // 關閉 Modal、更新畫面、顯示成功訊息
+    // ── 關閉 Modal、更新畫面、顯示成功 ──
     closeReturnNoticeModal();
     renderTable();
     setSyncStatus('ok','✓ 已同步');
     showToast(`✓ 已產生 ${generatedCount} 份退貨通知單，發信通知日已自動填入`, 4000);
 
-  } catch(err){
+  }catch(err){
     console.error('generateReturnNoticeExcel error:', err);
     showToast('⚠ 產生 Excel 失敗：' + err.message, 5000);
   }
