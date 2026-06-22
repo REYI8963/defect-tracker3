@@ -1437,7 +1437,7 @@ async function generateReturnNoticeExcel(){
 
       // ── 共用樣式定義 ──
 
-      // 細框線（套用到所有資料格）
+      // 細框線（套用到內部儲存格）
       const thinBorder = {
         top:    {style:'thin'},
         bottom: {style:'thin'},
@@ -1445,123 +1445,180 @@ async function generateReturnNoticeExcel(){
         right:  {style:'thin'},
       };
 
-      // 外側粗框線 + 內側細線（表格整體外框）
-      const outerBorder = {
+      // 外框粗線（套用到表格最外圍）
+      const mediumBorder = {
         top:    {style:'medium'},
         bottom: {style:'medium'},
         left:   {style:'medium'},
         right:  {style:'medium'},
       };
 
+      // 左外框粗、右細、上細、下細（左邊界）
+      const leftEdgeBorder = {
+        top:    {style:'thin'},
+        bottom: {style:'thin'},
+        left:   {style:'medium'},  // 左邊粗
+        right:  {style:'thin'},
+      };
+
+      // 右外框粗、左細、上細、下細（右邊界）
+      const rightEdgeBorder = {
+        top:    {style:'thin'},
+        bottom: {style:'thin'},
+        left:   {style:'thin'},
+        right:  {style:'medium'}, // 右邊粗
+      };
+
+      // 上外框粗（第一列上緣）
+      const topEdgeBorder = (isLeft, isRight) => ({
+        top:    {style:'medium'}, // 上邊粗
+        bottom: {style:'thin'},
+        left:   {style: isLeft  ? 'medium' : 'thin'},
+        right:  {style: isRight ? 'medium' : 'thin'},
+      });
+
+      // 下外框粗（最後一列下緣）
+      const bottomEdgeBorder = (isLeft, isRight) => ({
+        top:    {style:'thin'},
+        bottom: {style:'medium'}, // 下邊粗
+        left:   {style: isLeft  ? 'medium' : 'thin'},
+        right:  {style: isRight ? 'medium' : 'thin'},
+      });
+
       // 置中對齊
       const centerAlign = {horizontal:'center', vertical:'middle'};
 
-      // 說明列樣式：黃底 + 紅色粗體
+      // 說明列樣式：
+      // 背景色：RGB(255, 242, 204) → ARGB: FFFFF2CC
+      // 文字：紅色粗體
       const noticeFont = {name:'微軟正黑體', size:11, bold:true, color:{argb:'FFFF0000'}};
-      const noticeFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFFFFF00'}};
+      const noticeFill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFFFF2CC'}}; // RGB(255,242,204)
 
       // 一般文字樣式
       const normalFont = {name:'微軟正黑體', size:11};
 
       // ── 4d. 建立各列 ──
 
-      // Row 1：標題列（合併 A1:E1）
+      // ── Row 1：標題列（合併 A1:E1）──
       const titleRow = worksheet.addRow([
         `${sup}【${group.name}】退貨明細`, '', '', '', ''
       ]);
       titleRow.height = 20.1;
-      titleRow.getCell(1).font      = normalFont;
-      titleRow.getCell(1).alignment = centerAlign;
-      titleRow.getCell(1).border    = thinBorder;
-      // 補齊其他儲存格的框線（合併後仍需設定）
-      for(let c=2;c<=5;c++){
-        titleRow.getCell(c).border = thinBorder;
-      }
+      // 標題列：上/左/右 粗框，下細框
+      ['A','B','C','D','E'].forEach((col, ci) => {
+        const cell = titleRow.getCell(ci+1);
+        cell.font      = normalFont;
+        cell.alignment = centerAlign;
+        cell.border    = {
+          top:    {style:'medium'},
+          bottom: {style:'thin'},
+          left:   {style: ci===0 ? 'medium' : 'thin'},
+          right:  {style: ci===4 ? 'medium' : 'thin'},
+        };
+      });
       worksheet.mergeCells('A1:E1');
 
-      // Row 2：表頭列（序/商品代號/品名/數量/備註）
+      // ── Row 2：表頭列 ──
       const headerRow = worksheet.addRow(['序','商品代號','品名','數量','備註']);
       headerRow.height = 20.1;
-      headerRow.eachCell(cell => {
-        cell.font      = {...normalFont, bold:false};
+      headerRow.eachCell((cell, ci) => {
+        cell.font      = normalFont;
         cell.alignment = centerAlign;
-        cell.border    = thinBorder;
+        cell.border    = {
+          top:    {style:'thin'},
+          bottom: {style:'thin'},
+          left:   {style: ci===1 ? 'medium' : 'thin'},
+          right:  {style: ci===5 ? 'medium' : 'thin'},
+        };
       });
 
-      // Row 3~N：品項資料列
+      // ── Row 3~N：品項資料列 ──
       group.items.forEach((item, idx) => {
+        const isLastItem = idx === itemCount - 1;
         const dataRow = worksheet.addRow([
-          idx + 1,          // 序號（從 1 開始）
-          item.r.sku,       // 商品代號
-          item.r.name,      // 品名
-          item.r.qty,       // 數量
-          item.r.reason||'' // 備註（帶入不良原因）
+          idx + 1,
+          item.r.sku,
+          item.r.name,
+          item.r.qty,
+          item.r.reason||''
         ]);
         dataRow.height = 20.1;
-        dataRow.eachCell((cell, colNum) => {
-          cell.font      = normalFont;
-          cell.border    = thinBorder;
-          // 品名（C欄）靠左，其餘置中
-          cell.alignment = (colNum === 3) ? {horizontal:'left', vertical:'middle'} : centerAlign;
+        dataRow.eachCell((cell, ci) => {
+          cell.font   = normalFont;
+          // 品名（C欄=第3欄）靠左，其餘置中
+          cell.alignment = (ci===3) ? {horizontal:'left', vertical:'middle'} : centerAlign;
+          cell.border = {
+            top:    {style:'thin'},
+            bottom: {style: isLastItem ? 'thin' : 'thin'}, // 品項間細線
+            left:   {style: ci===1 ? 'medium' : 'thin'},
+            right:  {style: ci===5 ? 'medium' : 'thin'},
+          };
         });
       });
 
-      // ── 計算箱數列的 row number（1-indexed）──
-      // 標題(1) + 表頭(1) + 品項(itemCount) + 1 = 3 + itemCount
+      // ── 箱數列（跨兩列，A+B 合併 / C+D+E 合併）──
       const boxRowNum = 3 + itemCount;
-
-      // Row boxRowNum：箱數列（跨兩列，與下一列合併）
-      // A+B 合併顯示「箱數」，C+D+E 合併顯示「共 N 箱」
-      const boxRow1 = worksheet.addRow(['箱數', '', `共          ${boxCount}       箱`, '', '']);
+      const boxRow1 = worksheet.addRow(['箱數','',`共          ${boxCount}       箱`,'','']);
       boxRow1.height = 20.1;
+      // A 欄（箱數）
       boxRow1.getCell(1).font      = normalFont;
       boxRow1.getCell(1).alignment = centerAlign;
-      boxRow1.getCell(1).border    = thinBorder;
+      boxRow1.getCell(1).border    = {top:{style:'medium'}, bottom:{style:'thin'}, left:{style:'medium'}, right:{style:'thin'}};
+      // C 欄（共 N 箱）
       boxRow1.getCell(3).font      = normalFont;
       boxRow1.getCell(3).alignment = centerAlign;
-      boxRow1.getCell(3).border    = thinBorder;
+      boxRow1.getCell(3).border    = {top:{style:'medium'}, bottom:{style:'thin'}, left:{style:'thin'}, right:{style:'medium'}};
 
-      // Row boxRowNum+1：空白列（配合合併跨兩列）
+      // 箱數列第二行（空白，配合跨列合併）
       const boxRow2 = worksheet.addRow(['','','','','']);
       boxRow2.height = 20.1;
+      boxRow2.getCell(1).border = {top:{style:'thin'}, bottom:{style:'medium'}, left:{style:'medium'}, right:{style:'thin'}};
+      boxRow2.getCell(3).border = {top:{style:'thin'}, bottom:{style:'medium'}, left:{style:'thin'}, right:{style:'medium'}};
 
       // 合併箱數列
       worksheet.mergeCells(`A${boxRowNum}:B${boxRowNum+1}`);
       worksheet.mergeCells(`C${boxRowNum}:E${boxRowNum+1}`);
 
-      // ── 說明列的 row number ──
+      // ── 說明列 ──
       const noticeRow1 = boxRowNum + 2;
       const noticeRow2 = boxRowNum + 3;
 
-      // Row noticeRow1：收退時間說明（黃底 + 紅字 + 全欄合併）
+      // 說明列1：收退時間（淡黃底 + 紅字 + 粗外框）
       const notice1Row = worksheet.addRow([
         '收退時間：周一至周五 08：00~16：00','','','',''
       ]);
       notice1Row.height = 20.1;
-      notice1Row.getCell(1).font      = noticeFont;
-      notice1Row.getCell(1).fill      = noticeFill;
-      notice1Row.getCell(1).alignment = centerAlign;
-      notice1Row.getCell(1).border    = thinBorder;
-      // 補齊合併儲存格的格式
-      for(let c=2;c<=5;c++){
-        notice1Row.getCell(c).fill   = noticeFill;
-        notice1Row.getCell(c).border = thinBorder;
-      }
+      ['A','B','C','D','E'].forEach((col, ci) => {
+        const cell = notice1Row.getCell(ci+1);
+        cell.font      = noticeFont;
+        cell.fill      = noticeFill;
+        cell.alignment = centerAlign;
+        cell.border    = {
+          top:    {style:'medium'},
+          bottom: {style:'thin'},
+          left:   {style: ci===0 ? 'medium' : 'thin'},
+          right:  {style: ci===4 ? 'medium' : 'thin'},
+        };
+      });
       worksheet.mergeCells(`A${noticeRow1}:E${noticeRow1}`);
 
-      // Row noticeRow2：請於收件後說明（黃底 + 紅字 + 全欄合併）
+      // 說明列2：請於收件後（淡黃底 + 紅字 + 粗外框）
       const notice2Row = worksheet.addRow([
         '請於收件後三個工作天內收退完，並請回覆來收退時間，謝謝。','','','',''
       ]);
       notice2Row.height = 20.1;
-      notice2Row.getCell(1).font      = noticeFont;
-      notice2Row.getCell(1).fill      = noticeFill;
-      notice2Row.getCell(1).alignment = centerAlign;
-      notice2Row.getCell(1).border    = thinBorder;
-      for(let c=2;c<=5;c++){
-        notice2Row.getCell(c).fill   = noticeFill;
-        notice2Row.getCell(c).border = thinBorder;
-      }
+      ['A','B','C','D','E'].forEach((col, ci) => {
+        const cell = notice2Row.getCell(ci+1);
+        cell.font      = noticeFont;
+        cell.fill      = noticeFill;
+        cell.alignment = centerAlign;
+        cell.border    = {
+          top:    {style:'thin'},
+          bottom: {style:'medium'},  // 最後一列下緣粗框
+          left:   {style: ci===0 ? 'medium' : 'thin'},
+          right:  {style: ci===4 ? 'medium' : 'thin'},
+        };
+      });
       worksheet.mergeCells(`A${noticeRow2}:E${noticeRow2}`);
 
       // ── 4e. 產生 Excel Blob 並觸發下載 ──
