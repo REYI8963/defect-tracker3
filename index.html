@@ -1447,33 +1447,31 @@ async function generateReturnNoticeExcel(){
       // 一般字型
       const normalFont = {name:'微軟正黑體', size:11};
 
-      // ── 核心函式：依儲存格在表格中的位置決定框線粗細 ──
-      // isTop    = 是否為表格最頂列（top 用 medium）
-      // isBottom = 是否為表格最底列（bottom 用 medium）
-      // isLeft   = 是否為表格最左欄（left 用 medium）
-      // isRight  = 是否為表格最右欄（right 用 medium）
-      // 其餘方向一律 thin
-      function makeBorder(isTop, isBottom, isLeft, isRight){
-        return {
-          top:    {style: isTop    ? 'medium' : 'thin'},
-          bottom: {style: isBottom ? 'medium' : 'thin'},
-          left:   {style: isLeft   ? 'medium' : 'thin'},
-          right:  {style: isRight  ? 'medium' : 'thin'},
-        };
-      }
-
-      // 計算「整個表格」的最後一列（用於判斷 isBottom）
-      // 結構：標題(1) + 表頭(1) + 品項(itemCount) + 箱數(2) + 說明(2) = 6 + itemCount 列
-      const totalRows  = 6 + itemCount;
-      // 各區段的 row 編號（1-indexed，對應 worksheet row）
-      const ROW_TITLE   = 1;
-      const ROW_HEADER  = 2;
+      // ── 各區段列號常數（1-indexed，對應 worksheet 實際列號）──
+      const ROW_TITLE      = 1;
+      const ROW_HEADER     = 2;
       const ROW_DATA_START = 3;
       const ROW_DATA_END   = 2 + itemCount;
-      const ROW_BOX_1   = 3 + itemCount;  // 箱數第1列
-      const ROW_BOX_2   = 4 + itemCount;  // 箱數第2列（合併）
-      const ROW_NOTICE1 = 5 + itemCount;  // 收退時間
-      const ROW_NOTICE2 = 6 + itemCount;  // 請於收件後（最底列）
+      const ROW_BOX_1      = 3 + itemCount;  // 箱數第1列
+      const ROW_BOX_2      = 4 + itemCount;  // 箱數第2列（合併）
+      const ROW_NOTICE1    = 5 + itemCount;  // 收退時間
+      const ROW_NOTICE2    = 6 + itemCount;  // 請於收件後（最底列）
+
+      /**
+       * 根據儲存格位置回傳正確框線設定
+       * ExcelJS 關鍵規則：合併儲存格後，被合併格的外側邊框依然有效
+       * 因此必須對每一格都設定，不能只設主格
+       * @param {number} rowNum - 1-based 列號
+       * @param {number} ci     - 1-based 欄號（1=A ~ 5=E）
+       */
+      function getBorder(rowNum, ci){
+        return {
+          top:    {style: rowNum===ROW_TITLE   ? 'medium' : 'thin'},
+          bottom: {style: rowNum===ROW_NOTICE2 ? 'medium' : 'thin'},
+          left:   {style: ci===1               ? 'medium' : 'thin'},
+          right:  {style: ci===5               ? 'medium' : 'thin'},
+        };
+      }
 
       // ── 4d. 建立各列 ──
 
@@ -1487,12 +1485,7 @@ async function generateReturnNoticeExcel(){
         const cell = titleRow.getCell(ci);
         cell.font      = normalFont;
         cell.alignment = centerAlign;
-        cell.border    = makeBorder(
-          true,          // isTop：標題列是最頂
-          false,         // isBottom：不是最底
-          ci === 1,      // isLeft：只有 A 欄是最左
-          ci === 5       // isRight：只有 E 欄是最右
-        );
+        cell.border    = getBorder(ROW_TITLE, ci);
       }
       worksheet.mergeCells('A1:E1');
 
@@ -1503,7 +1496,7 @@ async function generateReturnNoticeExcel(){
         const cell = headerRow.getCell(ci);
         cell.font      = normalFont;
         cell.alignment = centerAlign;
-        cell.border    = makeBorder(false, false, ci===1, ci===5);
+        cell.border    = getBorder(ROW_HEADER, ci);
       }
 
       // ── Row 3~N：品項資料列 ──
@@ -1523,29 +1516,32 @@ async function generateReturnNoticeExcel(){
           cell.alignment = (ci===3)
             ? {horizontal:'left', vertical:'middle'}
             : centerAlign;
-          cell.border    = makeBorder(false, false, ci===1, ci===5);
+          const rowNum = ROW_DATA_START + idx;
+          cell.border  = getBorder(rowNum, ci);
         }
       });
 
-      // ── 箱數列（跨兩列：ROW_BOX_1 + ROW_BOX_2）──
-      // A1:B2 合併顯示「箱數」，C1:E2 合併顯示「共 N 箱」
+      // ── 箱數列（ROW_BOX_1 + ROW_BOX_2 跨兩列）──
+      // A:B 合併顯示「箱數」，C:E 合併顯示「共 N 箱」
+      // 關鍵：合併前必須對所有5個儲存格設定框線
+      // 被合併格的外側邊框（如 B 欄的右邊、E 欄的右邊）仍然有效
       const boxRow1 = worksheet.addRow(['箱數','',`共          ${boxCount}       箱`,'','']);
       boxRow1.height = 20.1;
-      // 箱數第1列：頂部是普通格下方，左欄是外框左邊
-      boxRow1.getCell(1).font      = normalFont;
-      boxRow1.getCell(1).alignment = centerAlign;
-      boxRow1.getCell(1).border    = makeBorder(false, false, true,  false); // 左外框，其餘細
-      boxRow1.getCell(3).font      = normalFont;
-      boxRow1.getCell(3).alignment = centerAlign;
-      boxRow1.getCell(3).border    = makeBorder(false, false, false, true);  // 右外框
+      for(let ci=1; ci<=5; ci++){
+        const cell     = boxRow1.getCell(ci);
+        cell.font      = normalFont;
+        cell.alignment = centerAlign;
+        cell.border    = getBorder(ROW_BOX_1, ci);
+      }
 
       const boxRow2 = worksheet.addRow(['','','','','']);
       boxRow2.height = 20.1;
-      // 箱數第2列：A1 是左外框，C5 是右外框
-      boxRow2.getCell(1).border = makeBorder(false, false, true,  false);
-      boxRow2.getCell(3).border = makeBorder(false, false, false, true);
+      // 箱數第2列同樣要對全部5格設定框線
+      for(let ci=1; ci<=5; ci++){
+        boxRow2.getCell(ci).border = getBorder(ROW_BOX_2, ci);
+      }
 
-      // 合併箱數儲存格
+      // 合併儲存格（合併後各格外側邊框保留）
       worksheet.mergeCells(`A${ROW_BOX_1}:B${ROW_BOX_2}`);
       worksheet.mergeCells(`C${ROW_BOX_1}:E${ROW_BOX_2}`);
 
@@ -1560,7 +1556,7 @@ async function generateReturnNoticeExcel(){
         cell.fill      = noticeFill;
         cell.alignment = centerAlign;
         // 說明列1：左右外框，上不是最頂
-        cell.border    = makeBorder(false, false, ci===1, ci===5);
+        cell.border    = getBorder(ROW_NOTICE1, ci);
       }
       worksheet.mergeCells(`A${ROW_NOTICE1}:E${ROW_NOTICE1}`);
 
@@ -1575,7 +1571,7 @@ async function generateReturnNoticeExcel(){
         cell.fill      = noticeFill;
         cell.alignment = centerAlign;
         // 說明列2：最底列（bottom medium），左右外框
-        cell.border    = makeBorder(false, true, ci===1, ci===5);
+        cell.border    = getBorder(ROW_NOTICE2, ci);
       }
       worksheet.mergeCells(`A${ROW_NOTICE2}:E${ROW_NOTICE2}`);
 
