@@ -404,6 +404,18 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
 .rn-box-label{font-size:12px;color:var(--text2);}
 .rn-box-input{width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:700;text-align:center;outline:none;}
 .rn-box-input:focus{border-color:#1a1917;}
+/* ── 消失品項提示視窗 ── */
+.missing-item-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:6px;background:var(--surface2);}
+.missing-item-row:hover{background:#f0efe9;}
+.missing-item-name{flex:1;font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.missing-item-meta{font-size:11px;color:var(--text3);}
+.missing-action-btn{flex-shrink:0;padding:4px 10px;border-radius:var(--r);font-size:11px;font-weight:600;cursor:pointer;border:1px solid;}
+.missing-btn-transfer{background:#e0f2fe;border-color:#7dd3fc;color:#0c4a6e;}
+.missing-btn-transfer:hover{background:#bae6fd;}
+.missing-btn-keep{background:var(--surface);border-color:var(--border2);color:var(--text2);}
+.missing-btn-keep:hover{background:var(--surface2);}
+.missing-btn-delete{background:#fee2e2;border-color:#fecaca;color:var(--red);}
+.missing-btn-delete:hover{background:#fecaca;}
 .role-admin{background:var(--amber-bg);color:var(--amber);}
 .role-user{background:var(--blue-bg);color:var(--blue);}
 /* ── 效期品標示 ── */
@@ -890,6 +902,39 @@ input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a1917;
     </div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════
+     消失品項處理視窗
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="missing-items-modal">
+  <div class="modal" style="width:640px;max-width:96vw">
+    <div class="modal-header">
+      <div class="modal-title">
+        <div class="modal-title-icon">⚠️</div>
+        發現不在新清單的品項
+      </div>
+      <button class="modal-close" onclick="closeMissingItemsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:var(--r);padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:14px">
+        ⚠️ 以下品項在新匯入的 Excel 中已不存在，請選擇每筆的處理方式後按「確認執行」。
+      </div>
+      <div id="missing-items-list" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;align-items:center">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="missingSelectAll('transfer')" style="background:#e0f2fe;border-color:#7dd3fc;color:#0c4a6e">全部轉入廠退</button>
+        <button class="btn btn-sm" onclick="missingSelectAll('keep')" style="background:var(--surface2);border-color:var(--border2)">全部保留</button>
+        <button class="btn btn-sm" onclick="missingSelectAll('delete')" style="background:#fee2e2;border-color:#fecaca;color:var(--red)">全部刪除</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="closeMissingItemsModal()">稍後再說</button>
+        <button class="btn btn-dark" onclick="applyMissingItems()">✓ 確認執行</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="notif-overlay" id="expiry-notif-overlay">
   <div class="notif-box" style="max-width:560px">
     <div class="notif-header">
@@ -1408,8 +1453,13 @@ async function generateReturnNoticeExcel(){
     });
 
     // ── 3. 準備日期字串（檔名用）──
-    const today   = todayStr();                        // 例：2026-06-22
-    const dateTag = today.replace(/-/g,'').slice(2);   // 例：260622
+    const today   = todayStr();                              // 例：2026-06-22
+    // 民國年計算：西元年 - 1911，月日補零
+    const _d      = new Date();
+    const rocYear = _d.getFullYear() - 1911;
+    const _m      = String(_d.getMonth()+1).padStart(2,'0');
+    const _day    = String(_d.getDate()).padStart(2,'0');
+    const dateTag = `${rocYear}${_m}${_day}`;               // 例：1150622
 
     let generatedCount = 0;
 
@@ -1570,18 +1620,18 @@ async function generateReturnNoticeExcel(){
       worksheet.mergeCells(`A${ROW_NOTICE2}:E${ROW_NOTICE2}`);
 
       // ── 4e. 產生 Excel Blob 並觸發下載 ──
-      // ExcelJS 在瀏覽器環境使用 writeBuffer() 輸出 ArrayBuffer
+      // 檔名格式：民國年月日【廠編】廠商名稱.xlsx
+      // 例：1150622【638412】明基生活.xlsx
       const buffer   = await workbook.xlsx.writeBuffer();
       const blob     = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const url      = URL.createObjectURL(blob);
       const link     = document.createElement('a');
-      const safeName = group.name.slice(0,10).replace(/[\\/:*?"<>|]/g,'');
+      const safeName = group.name.replace(/[\\/:*?"<>|]/g,'');
       link.href     = url;
-      link.download = `${dateTag}_${sup}_${safeName}.xlsx`;
+      link.download = `${dateTag}【${sup}】${safeName}.xlsx`;
       link.click();
-      // 釋放 Blob URL，避免記憶體洩漏
       setTimeout(() => URL.revokeObjectURL(url), 3000);
 
       generatedCount++;
@@ -2065,7 +2115,200 @@ async function deleteReturn(id){
   modal.classList.add('open');
 }
 
-// 從追蹤清單轉入
+// 從追蹤清單轉入廠退資料庫後，同步從追蹤清單移除
+async function doTransfer(){
+  const checked=[...document.querySelectorAll('.transfer-check:checked')];
+  if(!checked.length){showToast('⚠ 請先勾選品項');return;}
+  closeTransferModal();
+  showLoading('轉入中...');
+  try{
+    const idxToRemove=[];
+    const bodies=checked.map(cb=>{
+      const idx=parseInt(cb.dataset.idx);
+      const r=records[idx];
+      idxToRemove.push(idx);
+      // 轉入廠退資料庫，所有欄位空白讓人工填寫（比照手動新增模式）
+      return returnToDb({
+        returnNo:'', supplierName:r.supplierName||r.sup,
+        sku:r.sku, name:r.name, qty:r.qty,
+        returnDate:'', returnType:'',
+        note:'', handler:''
+      }, currentUser.whKey);
+    });
+    for(let i=0;i<bodies.length;i+=100){
+      const res=await sbFetch('POST', RETURN_TABLE, bodies.slice(i,i+100));
+      if(res) res.forEach(x=>returnRecords.unshift(dbToReturn(x)));
+    }
+    // ── 從追蹤清單移除已轉入的品項（從大到小刪，避免 index 錯位）──
+    idxToRemove.sort((a,b)=>b-a).forEach(idx=>{
+      const r=records[idx];
+      if(r&&r.id){
+        sbFetch('DELETE', TABLE+'?id=eq.'+r.id, null).catch(e=>console.error('刪除追蹤清單失敗：',e));
+      }
+      records.splice(idx,1);
+    });
+    renderTable();updateStats();
+    renderReturnTable();
+    showToast('✓ 已轉入 '+checked.length+' 筆至廠退資料庫，並從追蹤清單移除');
+    setSyncStatus('ok','✓ 已同步');
+  }catch(e){showToast('⚠ 轉入失敗：'+e.message,4000);}
+  hideLoading();
+}
+
+// ══════════════════════════════════════════════════
+// 消失品項處理視窗
+// 讓人工為每筆選擇：轉入廠退資料庫 / 保留 / 刪除
+// ══════════════════════════════════════════════════
+
+// 儲存消失品項清單（供 applyMissingItems 使用）
+let _missingItems = [];
+
+function closeMissingItemsModal(){
+  document.getElementById('missing-items-modal').classList.remove('open');
+  _missingItems = [];
+}
+
+// 顯示消失品項視窗
+function showMissingItemsDialog(missingItems){
+  _missingItems = missingItems;
+
+  const list = document.getElementById('missing-items-list');
+  list.innerHTML = missingItems.map((r, idx) => `
+    <div class="missing-item-row" id="missing-row-${idx}">
+      <div style="flex:1;min-width:0">
+        <div class="missing-item-name" title="${r.name}">${r.name}</div>
+        <div class="missing-item-meta">
+          ${r.sup}・${r.supplierName||''}・SKU:${r.sku}・庫存:${r.qty}
+          ${r.reply?'・<span style="color:var(--blue)">'+r.reply+'</span>':''}
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        <button class="missing-action-btn missing-btn-transfer"
+          id="missing-btn-transfer-${idx}"
+          onclick="setMissingAction(${idx},'transfer')"
+          title="轉入廠退資料庫">📦 轉入廠退</button>
+        <button class="missing-action-btn missing-btn-keep"
+          id="missing-btn-keep-${idx}"
+          onclick="setMissingAction(${idx},'keep')"
+          title="保留在追蹤清單">🔒 保留</button>
+        <button class="missing-action-btn missing-btn-delete"
+          id="missing-btn-delete-${idx}"
+          onclick="setMissingAction(${idx},'delete')"
+          title="直接刪除">🗑 刪除</button>
+      </div>
+    </div>
+  `).join('');
+
+  // 預設全部「保留」
+  missingItems.forEach((_, idx) => setMissingAction(idx, 'keep'));
+
+  document.getElementById('missing-items-modal').classList.add('open');
+}
+
+// 設定單筆的處理動作，並更新按鈕視覺回饋
+function setMissingAction(idx, action){
+  // 更新資料
+  _missingItems[idx]._action = action;
+
+  // 更新按鈕外觀（選中的加深底色）
+  const row = document.getElementById(`missing-row-${idx}`);
+  if(!row) return;
+
+  const btnTransfer = document.getElementById(`missing-btn-transfer-${idx}`);
+  const btnKeep     = document.getElementById(`missing-btn-keep-${idx}`);
+  const btnDelete   = document.getElementById(`missing-btn-delete-${idx}`);
+
+  // 重設全部
+  btnTransfer.style.opacity = '0.45';
+  btnKeep.style.opacity     = '0.45';
+  btnDelete.style.opacity   = '0.45';
+  row.style.borderColor     = 'var(--border)';
+
+  // 選中的高亮
+  if(action === 'transfer'){
+    btnTransfer.style.opacity = '1';
+    row.style.borderColor     = '#7dd3fc';
+    row.style.background      = '#f0f9ff';
+  } else if(action === 'keep'){
+    btnKeep.style.opacity     = '1';
+    row.style.borderColor     = 'var(--border)';
+    row.style.background      = 'var(--surface2)';
+  } else if(action === 'delete'){
+    btnDelete.style.opacity   = '1';
+    row.style.borderColor     = '#fca5a5';
+    row.style.background      = '#fff5f5';
+  }
+}
+
+// 全部套用同一動作
+function missingSelectAll(action){
+  _missingItems.forEach((_, idx) => setMissingAction(idx, action));
+}
+
+// 確認執行
+async function applyMissingItems(){
+  if(!_missingItems.length) return;
+
+  const toTransfer = _missingItems.filter(r => r._action === 'transfer');
+  const toDelete   = _missingItems.filter(r => r._action === 'delete');
+  // toKeep 直接放回 records，不做處理
+
+  closeMissingItemsModal();
+  showLoading('處理中...');
+
+  try{
+    // ── 轉入廠退資料庫 ──
+    if(toTransfer.length > 0){
+      const bodies = toTransfer.map(r => returnToDb({
+        returnNo:'', supplierName:r.supplierName||r.sup,
+        sku:r.sku, name:r.name, qty:r.qty,
+        returnDate:'', returnType:'',
+        note:'', handler:''
+      }, currentUser.whKey));
+      for(let i=0; i<bodies.length; i+=100){
+        const res = await sbFetch('POST', RETURN_TABLE, bodies.slice(i,i+100));
+        if(res) res.forEach(x => returnRecords.unshift(dbToReturn(x)));
+      }
+    }
+
+    // ── 刪除（DB + 記憶體）──
+    const allToRemove = [...toTransfer, ...toDelete];
+    for(const r of allToRemove){
+      if(r.id){
+        await sbFetch('DELETE', TABLE+'?id=eq.'+r.id, null)
+          .catch(e => console.error('刪除失敗：',e));
+      }
+      const idx = records.indexOf(r);
+      if(idx !== -1) records.splice(idx, 1);
+    }
+
+    // ── 保留的品項放回 records ──
+    const toKeep = _missingItems.filter(r => r._action === 'keep');
+    if(toKeep.length > 0){
+      records = [...records, ...toKeep].sort((a,b) => a.sn - b.sn);
+    }
+
+    renderTable(); updateStats(); renderReturnTable();
+    setSyncStatus('ok','✓ 已同步');
+
+    let msg = '✓ 處理完成';
+    if(toTransfer.length) msg += `：轉入廠退 ${toTransfer.length} 筆`;
+    if(toDelete.length)   msg += `、刪除 ${toDelete.length} 筆`;
+    if(toKeep.length)     msg += `、保留 ${toKeep.length} 筆`;
+    showToast(msg, 4000);
+
+  }catch(err){
+    console.error('applyMissingItems error:', err);
+    showToast('⚠ 處理失敗：' + err.message, 5000);
+  }
+  hideLoading();
+}
+
+document.getElementById('missing-items-modal').addEventListener('click', function(e){
+  if(e.target === document.getElementById('missing-items-modal')) closeMissingItemsModal();
+});
+
+// ── 從追蹤清單轉入選擇視窗 ──
 function openTransferModal(){
   const tbody=document.getElementById('transfer-tbody');
   const available=records.filter(r=>r.reply&&r.reply!=='');
@@ -2083,31 +2326,6 @@ function openTransferModal(){
 }
 function closeTransferModal(){document.getElementById('transfer-modal').classList.remove('open');}
 function toggleTransferAll(cb){document.querySelectorAll('.transfer-check').forEach(el=>el.checked=cb.checked);}
-
-async function doTransfer(){
-  const checked=[...document.querySelectorAll('.transfer-check:checked')];
-  if(!checked.length){showToast('⚠ 請先勾選品項');return;}
-  closeTransferModal();
-  showLoading('轉入中...');
-  try{
-    const bodies=checked.map(cb=>{
-      const r=records[parseInt(cb.dataset.idx)];
-      return returnToDb({
-        returnNo:'', supplierName:r.supplierName||r.sup,
-        sku:r.sku, name:r.name, qty:r.qty,
-        returnDate:r.returnDate||'', returnType:r.reply||'',
-        note:r.note||'', handler:r.handler||''
-      }, currentUser.whKey);
-    });
-    for(let i=0;i<bodies.length;i+=100){
-      const res=await sbFetch('POST', RETURN_TABLE, bodies.slice(i,i+100));
-      if(res) res.forEach(x=>returnRecords.unshift(dbToReturn(x)));
-    }
-    showToast('✓ 已轉入 '+checked.length+' 筆至已廠退資料庫');
-    renderReturnTable();
-  }catch(e){showToast('⚠ 轉入失敗：'+e.message,4000);}
-  hideLoading();
-}
 
 // 匯出廠退資料
 function exportReturnData(){
@@ -2561,21 +2779,30 @@ function handleFile(input){
             }
           }
         });
-        // Excel 沒有的舊資料：移除儲位異動且已處理的，其餘保留
-        const keepOld=[];
+        // ── 找出 Excel 消失的品項（不在新 Excel 中的舊資料）──
+        const missingItems=[];
         records.forEach(function(r){
           const k=r.sku+'_'+r.loc;
-          if(newMap[k]) return; // Excel 有的已處理
+          if(newMap[k]) return;           // Excel 有的已處理
           if(locChangesToKeep[r.sku]) return; // 儲位異動已用新儲位寫入
-          keepOld.push(r);
+          missingItems.push(r);
         });
-        records=[...merged,...keepOld].sort(function(a,b){return a.sn-b.sn;});
+
+        // 先更新 records（只含 merged，不含消失品項）
+        records=merged.sort(function(a,b){return a.sn-b.sn;});
         showTableIfHasData();renderTable();updateStats();notifShown=false;
+
         let msg='✓ 匯入完成：新增 '+added+' 筆，更新 '+updated+' 筆';
-        if(keepOld.length>0)msg+='，保留舊資料 '+keepOld.length+' 筆';
+        if(missingItems.length>0) msg+='，發現 '+missingItems.length+' 筆不在新清單';
         showToast(msg,4000);
+
         if(records.length>0){showDashboard();setTimeout(function(){showReturnDateNotif();setTimeout(showExpiryNotif,400);},600);}
         await saveAllRecords();renderTable();updateStats();
+
+        // ── 若有消失品項，跳出提示視窗讓人工處理 ──
+        if(missingItems.length>0){
+          setTimeout(function(){ showMissingItemsDialog(missingItems); }, 800);
+        }
       }
 
       // ── 若有儲位異動，先彈出詢問視窗 ──
